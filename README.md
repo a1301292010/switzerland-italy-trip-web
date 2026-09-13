@@ -41,3 +41,5 @@ npm run build:pages
 - `.github/workflows/`：持续构建检查
 
 自动发布由 Cloudflare Pages 监听 GitHub `main` 分支。
+
+Deployment refresh: V1.7 field usability and offline support.
