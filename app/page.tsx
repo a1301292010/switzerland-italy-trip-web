@@ -516,7 +516,7 @@ export default function Home() {
   const [ticketFilter, setTicketFilter] = useState<
     "all" | "buy" | "check" | "done"
   >("all");
-  const [todayMode, setTodayMode] = useState<"preview" | "prep">("preview"),
+  const [prepOpen, setPrepOpen] = useState(false),
     [prepChecks, setPrepChecks] = useState<Record<string, boolean>>({});
   const day = days[dayIndex];
   const theme =
@@ -565,7 +565,6 @@ export default function Home() {
       ? livePhase(day.events, localNow.minutes)
       : null;
   const preTrip = localNow.date < days[0].iso;
-  const daysToGo = Math.max(0, dayDistance(localNow.date, days[0].iso));
   const ticketGroups = {
     buy: content.tickets.filter((t) => /待买|未购|未付/.test(t.status)),
     check: content.tickets.filter((t) => /待确认|待定|核/.test(t.status)),
@@ -652,7 +651,16 @@ export default function Home() {
                     {theme.code} · {day.city}
                   </p>
                 </div>
-                <span className="hero-coord">{theme.coord}</span>
+                {preTrip && (
+                  <button
+                    className="prep-entry"
+                    onClick={() => setPrepOpen(true)}
+                  >
+                    准备 ·{" "}
+                    {prepItems.length -
+                      prepItems.filter(([key]) => prepChecks[key]).length}
+                  </button>
+                )}
               </div>
               <div className="hero-journey">
                 {routeNodes(day).slice(0, 3).join(" → ")}
@@ -668,71 +676,83 @@ export default function Home() {
               </div>
             </div>
           </section>
-          {preTrip && (
-            <PreTripSummary
-              daysToGo={daysToGo}
-              buy={ticketGroups.buy.length}
-              check={ticketGroups.check.length}
-            />
+          <div className="day-strip" aria-label="旅行进度">
+            {days.map((d, i) => {
+              const th =
+                themes.find(
+                  (t) => d.city.includes(t.match) || d.t…1733 tokens truncated…                      onClick={() => setExecution(index, "shot")}
+                            >
+                              📷 已拍
+                            </button>
+                            <button
+                              className={state === "skip" ? "active" : ""}
+                              onClick={() => setExecution(index, "skip")}
+                            >
+                              跳过
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+          {dayTickets.length > 0 && (
+            <section className="section-block">
+              <div className="section-heading">
+                <h3>当天票务</h3>
+                <span>状态以文档为准</span>
+              </div>
+              <div className="stack-list">
+                {dayTickets.map((t, i) => (
+                  <article key={i}>
+                    <Icon name="ticket" />
+                    <div>
+                      <strong>{t.name}</strong>
+                      <small>
+                        {t.time} · {t.price}
+                      </small>
+                    </div>
+                    <Status value={t.status} />
+                  </article>
+                ))}
+              </div>
+            </section>
           )}
-          {preTrip && (
-            <div className="today-mode" role="tablist">
-              <button
-                className={todayMode === "preview" ? "active" : ""}
-                onClick={() => setTod…2338 tokens truncated…</span>
-                  </div>
-                  <div className="stack-list">
-                    {dayTickets.map((t, i) => (
-                      <article key={i}>
-                        <Icon name="ticket" />
-                        <div>
-                          <strong>{t.name}</strong>
-                          <small>
-                            {t.time} · {t.price}
-                          </small>
-                        </div>
-                        <Status value={t.status} />
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-              <section className="section-block">
-                <div className="section-heading">
-                  <h3>现场提示</h3>
-                  <span>按需展开查看</span>
-                </div>
-                <div className="notes-grid">
-                  {[
-                    ["吃饭补给", day.food, "food"],
-                    ["行李", day.luggage, "ticket"],
-                    ["穿搭", day.clothes, "today"],
-                    ["Plan B", day.planB, "map"],
-                  ].map(([a, b, c]) => (
-                    <details key={a}>
-                      <summary>
-                        <Icon name={c as IconName} />
-                        <span>{a}</span>
-                      </summary>
-                      <p>{b}</p>
-                    </details>
-                  ))}
-                </div>
-              </section>
-            </>
-          )}
+          <section className="section-block">
+            <div className="section-heading">
+              <h3>现场提示</h3>
+              <span>按需展开查看</span>
+            </div>
+            <div className="notes-grid">
+              {[
+                ["吃饭补给", day.food, "food"],
+                ["行李", day.luggage, "ticket"],
+                ["穿搭", day.clothes, "today"],
+                ["Plan B", day.planB, "map"],
+              ].map(([a, b, c]) => (
+                <details key={a}>
+                  <summary>
+                    <Icon name={c as IconName} />
+                    <span>{a}</span>
+                  </summary>
+                  <p>{b}</p>
+                </details>
+              ))}
+            </div>
+          </section>
         </>
       )}
       {tab === "days" && (
-        <section className="page-section journal-page">
+        <section className="page-section itinerary-page">
           <div className="page-title">
-            <p>ROUTE BOOK</p>
             <h2>行程</h2>
-            <span>从阿尔卑斯到古罗马的九日章节</span>
+            <span>9 月 27 日 — 10 月 5 日 · 9 天</span>
           </div>
-          <TripChapter
-            title="CHAPTER 01 · 瑞士"
-            subtitle="9/27 — 9/30 · 高山与冰川"
+          <SimpleItineraryGroup
+            title="🇨🇭 SWITZERLAND"
             items={days.slice(0, 4)}
             offset={0}
             open={(i) => {
@@ -740,14 +760,8 @@ export default function Home() {
               setTab("today");
             }}
           />
-          <div className="border-crossing">
-            <span>跨境</span>
-            <b>Zermatt → Milano</b>
-            <small>雪山冷色在这里转入意大利暖色</small>
-          </div>
-          <TripChapter
-            title="CHAPTER 02 · 意大利"
-            subtitle="9/30 — 10/5 · 建筑与古城"
+          <SimpleItineraryGroup
+            title="🇮🇹 ITALY"
             items={days.slice(4)}
             offset={4}
             open={(i) => {
@@ -907,6 +921,25 @@ export default function Home() {
           </div>
         </section>
       )}
+      {prepOpen && (
+        <div className="modal-backdrop" onClick={() => setPrepOpen(false)}>
+          <section className="prep-sheet" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setPrepOpen(false)}>
+              ×
+            </button>
+            <p className="eyebrow">出发前</p>
+            <h2>准备清单</h2>
+            <PrepChecklist
+              checks={prepChecks}
+              toggle={togglePrep}
+              goTickets={() => {
+                setPrepOpen(false);
+                setTab("tickets");
+              }}
+            />
+          </section>
+        </div>
+      )}
       {spotVlog && (
         <div className="modal-backdrop" onClick={() => setSpotVlog(null)}>
           <section className="vlog-modal" onClick={(e) => e.stopPropagation()}>
@@ -954,35 +987,32 @@ export default function Home() {
   );
 }
 
-function TripChapter({
+function SimpleItineraryGroup({
   title,
-  subtitle,
   items,
   offset,
   open,
 }: {
   title: string;
-  subtitle: string;
   items: Day[];
   offset: number;
   open: (i: number) => void;
 }) {
   return (
-    <section className="trip-chapter">
-      <header>
-        <p>{title}</p>
-        <h3>{subtitle}</h3>
-      </header>
-      <div>
+    <section className="itinerary-group">
+      <h3>{title}</h3>
+      <div className="itinerary-rows">
         {items.map((d, j) => (
           <button key={d.iso} onClick={() => open(offset + j)}>
-            <span className="chapter-day">D{offset + j + 1}</span>
+            <time>
+              {d.shortDate}
+              <small>{d.weekday}</small>
+            </time>
             <div>
-              <small>
-                {d.shortDate} · {d.city}
-              </small>
               <strong>{d.title}</strong>
-              <p>{routeNodes(d).slice(0, 4).join(" → ")}</p>
+              <p>
+                {d.city} · {routeNodes(d).slice(0, 3).join(" → ")}
+              </p>
             </div>
             <Icon name="chevron" />
           </button>
@@ -991,31 +1021,6 @@ function TripChapter({
     </section>
   );
 }
-function PreTripSummary({
-  daysToGo,
-  buy,
-  check,
-}: {
-  daysToGo: number;
-  buy: number;
-  check: number;
-}) {
-  return (
-    <section className="pretrip-summary">
-      <span>
-        <b>{daysToGo}</b> 天后出发
-      </span>
-      <span>
-        待购买 <b>{buy}</b>
-      </span>
-      <span>
-        待确认 <b>{check}</b>
-      </span>
-      <span>T−7 开启天气</span>
-    </section>
-  );
-}
-
 const prepItems = [
   ["tickets", "票务最后检查", "Swiss Travel Pass、未购项目及预约状态"],
   ["insurance", "保险与跳伞确认", "核实保险期限及跳伞书面承保范围"],
@@ -1172,40 +1177,18 @@ function WeatherCard({
   }, [day.iso, coord, distance]);
   if (distance > 7) return null;
   return (
-    <section className="weather-module live">
-      <div className="weather-title">
-        <span>实时预报</span>
-        <small>
-          {weather
-            ? `更新 ${weather.updated}`
-            : failed
-              ? "暂时无法更新"
-              : "正在更新…"}
-        </small>
-      </div>
+    <section className="weather-strip">
+      <b>实时天气</b>
       {weather ? (
-        <div className="weather-metrics">
-          <article>
-            <b>{weather.apparent}°</b>
-            <span>体感</span>
-          </article>
-          <article>
-            <b>{weather.rain}%</b>
-            <span>降雨</span>
-          </article>
-          <article>
-            <b>{weather.wind}</b>
-            <span>风 km/h</span>
-          </article>
-          <article>
-            <b>{weather.visibility}</b>
-            <span>能见度 km</span>
-          </article>
-        </div>
+        <>
+          <span>体感 {weather.apparent}°</span>
+          <span>降雨 {weather.rain}%</span>
+          <span>风 {weather.wind} km/h</span>
+          <span>能见度 {weather.visibility} km</span>
+        </>
       ) : (
-        <p>{day.weather}</p>
+        <span>{failed ? "暂时无法更新" : `${day.weather} · 正在更新…`}</span>
       )}
-      <small>实时数据：Open-Meteo；规划参考仍以正式行程文档为准。</small>
     </section>
   );
 }
