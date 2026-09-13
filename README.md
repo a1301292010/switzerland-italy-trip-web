@@ -38,3 +38,5 @@ npm run build:pages
 - `data/`：脱敏后的公开行程数据
 - `public/`：公开静态资源
 - `.github/workflows/`：持续构建检查
+
+自动发布由 Cloudflare Pages 监听 GitHub `main` 分支。
