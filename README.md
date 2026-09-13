@@ -47,3 +47,5 @@ Deployment refresh: V1.7 field usability and offline support.
 V1.7 UX cleanup: travel-first Today page, compact pre-trip summary, and optional preparation checklist.
 
 Presentation cleanup: calm travel-first Today and minimal itinerary overview.
+
+Build repair: restored complete UTF-8 source after transport truncation.
