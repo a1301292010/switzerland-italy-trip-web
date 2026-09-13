@@ -3,9 +3,8 @@
   "dates": { "start": "2026-09-27", "end": "2026-10-05" },
   "cities": ["Interlaken", "Lauterbrunnen", "Mürren", "Lungern", "Milan", "Florence", "Rome", "Vatican City"],
   "confirmed": {
-    "swissTravelPassDays": 3,
+    "swissTravelPassDays": 4,
     "milanDuomo": { "date": "2026-10-01", "time": "09:00", "status": "purchased" }
   },
   "privacy": "Public, redacted itinerary data only"
 }
-
