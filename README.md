@@ -43,3 +43,5 @@ npm run build:pages
 自动发布由 Cloudflare Pages 监听 GitHub `main` 分支。
 
 Deployment refresh: V1.7 field usability and offline support.
+
+V1.7 UX cleanup: travel-first Today page, compact pre-trip summary, and optional preparation checklist.
