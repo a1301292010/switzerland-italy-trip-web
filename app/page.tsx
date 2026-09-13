@@ -680,7 +680,170 @@ export default function Home() {
             {days.map((d, i) => {
               const th =
                 themes.find(
-                  (t) => d.city.includes(t.match) || d.t…1733 tokens truncated…                      onClick={() => setExecution(index, "shot")}
+                  (t) => d.city.includes(t.match) || d.title.includes(t.match),
+                ) || themes[i < 4 ? 0 : 3];
+              return (
+                <button
+                  key={d.iso}
+                  className={i === dayIndex ? "active" : ""}
+                  onClick={() => setDayIndex(i)}
+                >
+                  <small>
+                    {th.flag} DAY {i + 1}
+                  </small>
+                  <b>{d.shortDate}</b>
+                  <span>{th.code}</span>
+                </button>
+              );
+            })}
+          </div>
+          {phase && <NowNext day={day} phase={phase} />}
+          <WeatherCard day={day} coord={theme.coord} today={localNow.date} />
+          <section className="route-ribbon">
+            <div className="route-head">
+              <span>
+                <Icon name="map" size={15} /> 今日路线
+              </span>
+              <button onClick={() => openMap(day.city)}>完整地图 ↗</button>
+            </div>
+            <div className="route-nodes">
+              {routeNodes(day).map((n, i) => (
+                <div key={`${n}-${i}`}>
+                  <i>{i + 1}</i>
+                  <span>{n}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="section-block timeline-section">
+            <div className="section-heading">
+              <h3>今天怎么走</h3>
+              <span>硬时间：{day.hardTime || "无固定预约"}</span>
+            </div>
+            <div className="timeline">
+              {day.events.map((e, index) => {
+                const kind = eventKind(e),
+                  v = matchVlog(e),
+                  pills = statusPills(e),
+                  state = eventStates[`${day.iso}:${index}`],
+                  rail = railLink(e),
+                  vehicle = (`${e.title} ${e.transport}`.match(
+                    /\b(?:FR|IC|EC|IR|RE|RJX?|ICE|Italo)\s?\d{2,5}\b/i,
+                  ) || [])[0];
+                return (
+                  <article
+                    className={`timeline-item kind-${kind} ${state ? `is-${state}` : ""} ${phase?.nowIndex === index ? "is-current" : ""}`}
+                    key={`${e.time}-${index}`}
+                  >
+                    <time>{e.time}</time>
+                    <div className="rail">
+                      <i>
+                        <Icon name={kind} size={14} />
+                      </i>
+                    </div>
+                    <div className="event-card">
+                      <div className="event-compact">
+                        <div className="event-top">
+                          <span className="tag">{e.area}</span>
+                          {v && (
+                            <button
+                              className="vlog-chip"
+                              onClick={() => setSpotVlog(v)}
+                            >
+                              <Icon name="camera" size={15} />
+                              口播
+                            </button>
+                          )}
+                        </div>
+                        <strong>{e.title}</strong>
+                        {state && (
+                          <span className="compact-state">
+                            {state === "done"
+                              ? "✓ 已完成"
+                              : state === "shot"
+                                ? "📷 已拍"
+                                : "已跳过"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="event-expanded">
+                        <small>
+                          {e.transport}
+                          {e.duration ? ` · ${e.duration}` : ""}
+                        </small>
+                        <div className="pills">
+                          {pills.map((p) => (
+                            <span key={p}>{p}</span>
+                          ))}
+                          {v && <span className="vlog">Vlog重点</span>}
+                        </div>
+                        <div className="quick-meta">
+                          <span>{e.cost || "费用待定"}</span>
+                          <span>{e.booking || "无票务"}</span>
+                        </div>
+                        <div className="card-actions">
+                          {e.map && (
+                            <button onClick={() => openMap(e.map)}>
+                              <Icon name="map" size={17} />
+                              地图
+                            </button>
+                          )}
+                          {kind === "train" && (
+                            <>
+                              <a
+                                href={rail[1]}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {rail[0]}
+                              </a>
+                              <button onClick={() => copyText(e.map || e.area)}>
+                                复制站名
+                              </button>
+                              {vehicle && (
+                                <button onClick={() => copyText(vehicle)}>
+                                  复制车次
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        <details>
+                          <summary>安全、Plan B 与详细说明</summary>
+                          <p>{e.description}</p>
+                          {e.safety && (
+                            <p>
+                              <b>注意：</b>
+                              {e.safety}
+                            </p>
+                          )}
+                          {e.planB && (
+                            <p>
+                              <b>变化方案：</b>
+                              {e.planB}
+                            </p>
+                          )}
+                          {e.photo && (
+                            <p>
+                              <b>拍摄：</b>
+                              {e.photo}
+                            </p>
+                          )}
+                        </details>
+                        {phase && (
+                          <div
+                            className="execution-actions"
+                            aria-label="本地执行状态"
+                          >
+                            <button
+                              className={state === "done" ? "active" : ""}
+                              onClick={() => setExecution(index, "done")}
+                            >
+                              ✓ 完成
+                            </button>
+                            <button
+                              className={state === "shot" ? "active" : ""}
+                              onClick={() => setExecution(index, "shot")}
                             >
                               📷 已拍
                             </button>
@@ -1330,4 +1493,3 @@ function Prompter({
     </div>
   );
 }
-
