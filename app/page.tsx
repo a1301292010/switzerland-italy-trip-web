@@ -86,8 +86,8 @@ export default function Home() {
       </section>
 
       <section className="ticket-card">
-        <div className="ticket-mark">3</div>
-        <div><span>交通票</span><strong>Swiss Travel Pass · 3 日</strong><small>已确认 · 今天适用</small></div>
+        <div className="ticket-mark">4</div>
+        <div><span>交通票</span><strong>Swiss Travel Pass · 4 日</strong><small>已确认 · 9/27–9/30 适用</small></div>
         <b>✓</b>
       </section>
 
@@ -104,4 +104,3 @@ export default function Home() {
     </main>
   );
 }
-
