@@ -123,18 +123,31 @@ const dayTheme: Record<string, ThemeKey> = {
 };
 
 function compactTodayPoints(points: TripMapPoint[], limit = 8) {
-  const eventPoints = points.filter(
-    (point, index) =>
-      points.findIndex((candidate) => candidate.eventIndex === point.eventIndex) ===
-      index,
-  );
+  const eventPoints = Array.from(new Set(points.map((point) => point.eventIndex)))
+    .map((eventIndex) =>
+      points
+        .filter((point) => point.eventIndex === eventIndex)
+        .sort(
+          (a, b) =>
+            (b.todayPriority || 0) - (a.todayPriority || 0) || a.order - b.order,
+        )[0],
+    )
+    .sort((a, b) => a.order - b.order);
   if (eventPoints.length <= limit) return eventPoints;
-  const selected = new Set(
-    Array.from({ length: limit }, (_, index) =>
-      Math.round((index * (eventPoints.length - 1)) / (limit - 1)),
-    ),
-  );
-  return eventPoints.filter((_, index) => selected.has(index));
+  const keep = new Set<TripMapPoint>([
+    eventPoints[0],
+    eventPoints[eventPoints.length - 1],
+  ]);
+  eventPoints
+    .filter((point) => point.todayPriority)
+    .sort((a, b) => (b.todayPriority || 0) - (a.todayPriority || 0))
+    .forEach((point) => {
+      if (keep.size < limit) keep.add(point);
+    });
+  eventPoints.forEach((point) => {
+    if (keep.size < limit) keep.add(point);
+  });
+  return eventPoints.filter((point) => keep.has(point));
 }
 
 function CityArt({ kind }: { kind: string }) {
