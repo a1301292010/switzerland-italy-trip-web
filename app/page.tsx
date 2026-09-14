@@ -62,57 +62,80 @@ type IconName =
 
 const days = content.days as Day[];
 
-const themes = [
-  {
-    match: "Interlaken",
+const themes = {
+  interlaken: {
     key: "interlaken",
     flag: "🇨🇭",
     code: "INT",
-    coord: "46.6863° N · 7.8632° E",
+    weatherCoord: { lat: 46.6863, lng: 7.8632 },
   },
-  {
-    match: "Lauterbrunnen",
+  lauterbrunnen: {
     key: "lauterbrunnen",
     flag: "🇨🇭",
     code: "LBR",
-    coord: "46.5935° N · 7.9091° E",
+    weatherCoord: { lat: 46.5935, lng: 7.9091 },
   },
-  {
-    match: "Zermatt",
+  zermatt: {
     key: "zermatt",
     flag: "🇨🇭",
     code: "ZMT",
-    coord: "46.0207° N · 7.7491° E",
+    weatherCoord: { lat: 46.0207, lng: 7.7491 },
   },
-  {
-    match: "米兰",
+  milan: {
     key: "milan",
     flag: "🇮🇹",
     code: "MIL",
-    coord: "45.4642° N · 9.1900° E",
+    weatherCoord: { lat: 45.4642, lng: 9.19 },
   },
-  {
-    match: "威尼斯",
+  venice: {
     key: "venice",
     flag: "🇮🇹",
     code: "VCE",
-    coord: "45.4408° N · 12.3155° E",
+    weatherCoord: { lat: 45.4408, lng: 12.3155 },
   },
-  {
-    match: "佛罗伦萨",
+  florence: {
     key: "florence",
     flag: "🇮🇹",
     code: "FLR",
-    coord: "43.7696° N · 11.2558° E",
+    weatherCoord: { lat: 43.7696, lng: 11.2558 },
   },
-  {
-    match: "罗马",
+  rome: {
     key: "rome",
     flag: "🇮🇹",
     code: "ROM",
-    coord: "41.9028° N · 12.4964° E",
+    weatherCoord: { lat: 41.9028, lng: 12.4964 },
   },
-];
+} as const;
+
+type ThemeKey = keyof typeof themes;
+
+// ISO date is the stable source key; translated city labels are presentation only.
+const dayTheme: Record<string, ThemeKey> = {
+  "2026-09-27": "lauterbrunnen",
+  "2026-09-28": "interlaken",
+  "2026-09-29": "zermatt",
+  "2026-09-30": "milan",
+  "2026-10-01": "milan",
+  "2026-10-02": "venice",
+  "2026-10-03": "florence",
+  "2026-10-04": "rome",
+  "2026-10-05": "rome",
+};
+
+function compactTodayPoints(points: TripMapPoint[], limit = 8) {
+  const eventPoints = points.filter(
+    (point, index) =>
+      points.findIndex((candidate) => candidate.eventIndex === point.eventIndex) ===
+      index,
+  );
+  if (eventPoints.length <= limit) return eventPoints;
+  const selected = new Set(
+    Array.from({ length: limit }, (_, index) =>
+      Math.round((index * (eventPoints.length - 1)) / (limit - 1)),
+    ),
+  );
+  return eventPoints.filter((_, index) => selected.has(index));
+}
 
 function CityArt({ kind }: { kind: string }) {
   if (kind === "milan")
@@ -636,11 +659,11 @@ export default function Home() {
   const [mapDayIso, setMapDayIso] = useState<string | null>(null),
     [activeMapId, setActiveMapId] = useState<string | null>(null),
     [mapSheetPoint, setMapSheetPoint] = useState<TripMapPoint | null>(null);
+  const dailyMapRef = useRef<HTMLElement>(null);
   const day = days[dayIndex];
-  const theme =
-    themes.find(
-      (t) => day.city.includes(t.match) || day.title.includes(t.match),
-    ) || themes[dayIndex < 4 ? 0 : 3];
+  const theme = themes[dayTheme[day.iso]];
+  const fullDayPoints = dayMapPoints[day.iso] || [];
+  const todayMapPoints = compactTodayPoints(fullDayPoints);
   const dayTickets = useMemo(
     () =>
       content.tickets.filter(
@@ -803,10 +826,7 @@ export default function Home() {
           </section>
           <div className="day-strip" aria-label="旅行进度">
             {days.map((d, i) => {
-              const th =
-                themes.find(
-                  (t) => d.city.includes(t.match) || d.title.includes(t.match),
-                ) || themes[i < 4 ? 0 : 3];
+              const th = themes[dayTheme[d.iso]];
               return (
                 <button
                   key={d.iso}
@@ -823,8 +843,12 @@ export default function Home() {
             })}
           </div>
           {phase && <NowNext day={day} phase={phase} />}
-          <WeatherCard day={day} coord={theme.coord} today={localNow.date} />
-          <section className="daily-map-block">
+          <WeatherCard
+            day={day}
+            coord={theme.weatherCoord}
+            today={localNow.date}
+          />
+          <section className="daily-map-block" ref={dailyMapRef}>
             <div className="section-heading">
               <h3>当日地图</h3>
               <button
@@ -837,14 +861,16 @@ export default function Home() {
               </button>
             </div>
             <TripMap
-              points={dayMapPoints[day.iso] || []}
+              points={todayMapPoints}
               activeId={activeMapId}
               onSelect={(point) => {
                 setActiveMapId(point.id);
                 setMapSheetPoint(point);
               }}
             />
-            <SegmentNavigation points={dayMapPoints[day.iso] || []} />
+            <p className="compact-map-note">
+              Today 显示 {todayMapPoints.length} 个主要执行点 · 完整 {fullDayPoints.length} 个点请展开地图
+            </p>
           </section>
           <section className="section-block timeline-section">
             <div className="section-heading">
@@ -858,9 +884,15 @@ export default function Home() {
                   pills = statusPills(e),
                   state = eventStates[`${day.iso}:${index}`],
                   rail = railLink(e),
-                  mapPoint = (dayMapPoints[day.iso] || []).find(
+                  eventMapPoints = fullDayPoints.filter(
                     (point) => point.eventIndex === index,
                   ),
+                  mapPoint = eventMapPoints[0],
+                  mapOrder = eventMapPoints.length
+                    ? eventMapPoints.length === 1
+                      ? `${eventMapPoints[0].order}`
+                      : `${eventMapPoints[0].order}–${eventMapPoints[eventMapPoints.length - 1].order}`
+                    : null,
                   vehicle = (`${e.title} ${e.transport}`.match(
                     /\b(?:FR|IC|EC|IR|RE|RJX?|ICE|Italo)\s?\d{2,5}\b/i,
                   ) || [])[0];
@@ -868,11 +900,10 @@ export default function Home() {
                   <article
                     className={`timeline-item kind-${kind} ${state ? `is-${state}` : ""} ${phase?.nowIndex === index ? "is-current" : ""}`}
                     key={`${e.time}-${index}`}
-                    onClick={() => mapPoint && setActiveMapId(mapPoint.id)}
                   >
                     <time>
-                      {mapPoint && (
-                        <b className="map-order">{mapPoint.order}</b>
+                      {mapOrder && (
+                        <b className="map-order">{mapOrder}</b>
                       )}
                       {e.time}
                     </time>
@@ -922,6 +953,30 @@ export default function Home() {
                           <span>{e.booking || "无票务"}</span>
                         </div>
                         <div className="card-actions">
+                          {mapPoint && (
+                            <button
+                              className="map-locate"
+                              onClick={() => {
+                                setActiveMapId(mapPoint.id);
+                                if (
+                                  todayMapPoints.some(
+                                    (point) => point.id === mapPoint.id,
+                                  )
+                                ) {
+                                  dailyMapRef.current?.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                  });
+                                } else {
+                                  setMapDayIso(day.iso);
+                                  setTab("map");
+                                }
+                              }}
+                            >
+                              <Icon name="map" size={17} />
+                              地图定位 {mapOrder}
+                            </button>
+                          )}
                           {e.map && (
                             <button onClick={() => openMap(e.map)}>
                               <Icon name="map" size={17} />
@@ -1331,7 +1386,7 @@ function MapPage({
         <span>
           {selected
             ? `${selected.shortDate} · ${selected.title}`
-            : "Switzerland → Italy · 主路线"}
+            : "Switzerland → Italy · 主要目的地"}
         </span>
       </div>
       <div className="map-scope">
@@ -1377,7 +1432,7 @@ function MapPage({
       </div>
       {!selected && (
         <p className="map-note">
-          选择某一天查看详细地点。主路线仅表达正式行程顺序，不代表精确铁路轨迹。
+          选择某一天查看详细地点。全程视图仅概览主要目的地与往返关系，不代表精确交通轨迹。
         </p>
       )}
     </section>
@@ -1414,7 +1469,13 @@ function MapEventSheet({
         </div>
         <button
           className="map-navigate"
-          onClick={() => openMap(event.map || point.name)}
+          onClick={() =>
+            window.open(
+              `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}`,
+              "_blank",
+              "noopener,noreferrer",
+            )
+          }
         >
           Google Maps 导航 ↗
         </button>
@@ -1578,7 +1639,7 @@ function WeatherCard({
   today,
 }: {
   day: Day;
-  coord: string;
+  coord: { lat: number; lng: number };
   today: string;
 }) {
   const distance = dayDistance(today, day.iso),
@@ -1586,9 +1647,7 @@ function WeatherCard({
     [failed, setFailed] = useState(false);
   useEffect(() => {
     if (distance < 0 || distance > 7) return;
-    const nums = coord.match(/[\d.]+/g)?.map(Number);
-    if (!nums) return;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${nums[0]}&longitude=${nums[1]}&hourly=apparent_temperature,precipitation_probability,wind_speed_10m,visibility&timezone=Europe%2FZurich&forecast_days=8`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coord.lat}&longitude=${coord.lng}&hourly=apparent_temperature,precipitation_probability,wind_speed_10m,visibility&timezone=auto&forecast_days=8`;
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error();
@@ -1610,7 +1669,7 @@ function WeatherCard({
         });
       })
       .catch(() => setFailed(true));
-  }, [day.iso, coord, distance]);
+  }, [day.iso, coord.lat, coord.lng, distance]);
   if (distance > 7) return null;
   return (
     <section className="weather-strip">
