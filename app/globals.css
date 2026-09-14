@@ -45,3 +45,4 @@
 .trip-pin{border-radius:50%;transform:none}
 .map-scope{scrollbar-width:none}
 .map-scope::-webkit-scrollbar{display:none}
+.google-route-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:10px}.google-route-actions button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:9px 12px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:12px;font-weight:800}.google-route-actions small{width:100%;color:var(--muted);font-size:10px;line-height:1.4}

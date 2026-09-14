@@ -302,6 +302,52 @@ function openMap(query: string) {
       "noopener,noreferrer",
     );
 }
+
+function googleRouteUrl(points: TripMapPoint[]) {
+  if (points.length < 2) return "";
+  const params = new URLSearchParams({
+    api: "1",
+    origin: `${points[0].lat},${points[0].lng}`,
+    destination: `${points[points.length - 1].lat},${points[points.length - 1].lng}`,
+    travelmode: points.slice(1).every((point) => point.transport === "walk")
+      ? "walking"
+      : "transit",
+  });
+  if (points.length > 2)
+    params.set(
+      "waypoints",
+      points
+        .slice(1, -1)
+        .map((point) => `${point.lat},${point.lng}`)
+        .join("|"),
+    );
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+function GoogleRouteActions({ points }: { points: TripMapPoint[] }) {
+  const routes: TripMapPoint[][] = [];
+  for (let start = 0; start < points.length - 1; start += 4)
+    routes.push(points.slice(start, start + 5));
+  if (!routes.length) return null;
+  return (
+    <div className="google-route-actions">
+      {routes.map((route, index) => (
+        <button
+          key={`${route[0].id}-${index}`}
+          onClick={() =>
+            window.open(googleRouteUrl(route), "_blank", "noopener,noreferrer")
+          }
+        >
+          <Icon name="map" size={14} />
+          {routes.length === 1
+            ? "Google Maps 串联今日路线"
+            : `Google Maps 路线 ${String.fromCharCode(65 + index)}`}
+        </button>
+      ))}
+      {routes.length > 1 && <small>按 A → B → C 顺序打开，衔接点会保留</small>}
+    </div>
+  );
+}
 function eventKind(e: Event): IconName {
   const s = `${e.title}${e.area}${e.transport}${e.food}${e.photo}`;
   if (/入住|酒店|民宿|住宿|BASE/i.test(s)) return "hotel";
@@ -747,6 +793,7 @@ export default function Home() {
                 setMapSheetPoint(point);
               }}
             />
+            <GoogleRouteActions points={dayMapPoints[day.iso] || []} />
           </section>
           <section className="section-block timeline-section">
             <div className="section-heading">
@@ -1254,6 +1301,7 @@ function MapPage({
         ))}
       </div>
       <TripMap points={points} overview={!selected} onSelect={onPoint} />
+      {selected && <GoogleRouteActions points={points} />}
       <div className="map-legend">
         <span>
           <i className="train" />
