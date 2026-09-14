@@ -9,6 +9,7 @@ const colors: Record<string, string> = {
   walk: "#9a6b47",
   cable: "#80566f",
   flight: "#637089",
+  operator: "#b27648",
   transfer: "#70766f",
 };
 
@@ -48,9 +49,12 @@ export default function TripMap({
       const bounds = L.latLngBounds([]);
       points.forEach((point, index) => {
         bounds.extend([point.lat, point.lng]);
+        const duplicate = points
+          .slice(0, index)
+          .filter((item) => item.lat === point.lat && item.lng === point.lng).length;
         const icon = L.divIcon({
           className: "trip-pin-wrap",
-          html: `<span class="trip-pin ${overview ? "overview" : ""}">${overview ? index + 1 : point.order}</span>`,
+          html: `<span class="trip-pin ${overview ? "overview" : ""}" style="translate:${duplicate * 10}px ${duplicate * -5}px">${overview ? index + 1 : point.order}</span>`,
           iconSize: [30, 36],
           iconAnchor: [15, 34],
         });
@@ -73,7 +77,13 @@ export default function TripMap({
               weight: kind === "walk" ? 2 : 3,
               opacity: 0.78,
               dashArray:
-                kind === "walk" ? "3 6" : kind === "flight" ? "9 8" : undefined,
+                kind === "walk"
+                  ? "3 6"
+                  : kind === "train"
+                    ? "10 7"
+                    : kind === "flight"
+                      ? "9 8"
+                      : "5 6",
             },
           ).addTo(map);
         }

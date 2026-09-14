@@ -303,15 +303,13 @@ function openMap(query: string) {
     );
 }
 
-function googleRouteUrl(points: TripMapPoint[]) {
+function googleRouteUrl(points: TripMapPoint[], mode: "walking" | "transit") {
   if (points.length < 2) return "";
   const params = new URLSearchParams({
     api: "1",
     origin: `${points[0].lat},${points[0].lng}`,
     destination: `${points[points.length - 1].lat},${points[points.length - 1].lng}`,
-    travelmode: points.slice(1).every((point) => point.transport === "walk")
-      ? "walking"
-      : "transit",
+    travelmode: mode,
   });
   if (points.length > 2)
     params.set(
@@ -324,27 +322,92 @@ function googleRouteUrl(points: TripMapPoint[]) {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-function GoogleRouteActions({ points }: { points: TripMapPoint[] }) {
-  const routes: TripMapPoint[][] = [];
-  for (let start = 0; start < points.length - 1; start += 4)
-    routes.push(points.slice(start, start + 5));
-  if (!routes.length) return null;
+type NavigationSegment = {
+  mode: "walking" | "transit" | "info";
+  points: TripMapPoint[];
+  transport: TripMapPoint["transport"];
+};
+
+function navigationSegments(points: TripMapPoint[]) {
+  const segments: NavigationSegment[] = [];
+  for (let index = 1; index < points.length; index++) {
+    const previous = points[index - 1],
+      point = points[index],
+      mode =
+        point.transport === "walk"
+          ? "walking"
+          : point.transport === "train"
+            ? "transit"
+            : "info";
+    const current = segments[segments.length - 1];
+    if (
+      mode !== "info" &&
+      current?.mode === mode &&
+      current.points[current.points.length - 1].id === previous.id &&
+      current.points.length < 5
+    )
+      current.points.push(point);
+    else
+      segments.push({
+        mode,
+        points: [previous, point],
+        transport: point.transport,
+      });
+  }
+  return segments;
+}
+
+function SegmentNavigation({ points }: { points: TripMapPoint[] }) {
+  const segments = navigationSegments(points);
+  if (!segments.length) return null;
+  const officialRail = points[0].day <= "2026-09-30"
+    ? ["SBB", "https://www.sbb.ch/en"]
+    : ["Trenitalia / Italo", "https://www.trenitalia.com/en.html"];
   return (
-    <div className="google-route-actions">
-      {routes.map((route, index) => (
-        <button
-          key={`${route[0].id}-${index}`}
-          onClick={() =>
-            window.open(googleRouteUrl(route), "_blank", "noopener,noreferrer")
-          }
-        >
-          <Icon name="map" size={14} />
-          {routes.length === 1
-            ? "Google Maps 串联今日路线"
-            : `Google Maps 路线 ${String.fromCharCode(65 + index)}`}
-        </button>
-      ))}
-      {routes.length > 1 && <small>按 A → B → C 顺序打开，衔接点会保留</small>}
+    <div className="segment-navigation">
+      <strong>分段导航</strong>
+      <small>编号连线仅表示正式行程顺序，不是实际轨迹</small>
+      {segments.map((segment, index) => {
+        const from = segment.points[0],
+          to = segment.points[segment.points.length - 1],
+          info =
+            segment.transport === "cable"
+              ? "缆车 · 按现场线路与站名乘坐"
+              : segment.transport === "operator"
+                ? "运营方接驳 · 不生成公共导航"
+                : segment.transport === "flight"
+                  ? "航班 · 不作为地面导航"
+                  : "现场接驳 / Taxi · 按当日确认方式";
+        return (
+          <div className={`nav-segment mode-${segment.mode}`} key={`${from.id}-${to.id}-${index}`}>
+            <span>{from.order} → {to.order}</span>
+            <div>
+              <b>{from.name} → {to.name}</b>
+              {segment.mode === "info" ? (
+                <small>{info}</small>
+              ) : (
+                <button
+                  onClick={() =>
+                    window.open(
+                      googleRouteUrl(
+                        segment.points,
+                        segment.mode === "walking" ? "walking" : "transit",
+                      ),
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  Google Maps · {segment.mode === "walking" ? "步行" : "公共交通"}
+                </button>
+              )}
+            </div>
+            {segment.mode === "transit" && (
+              <a href={officialRail[1]} target="_blank" rel="noreferrer">{officialRail[0]}</a>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -590,7 +653,6 @@ export default function Home() {
     ["days", "行程", "days"],
     ["map", "地图", "map"],
     ["tickets", "票务", "ticket"],
-    ["budget", "预算", "budget"],
     ["vlog", "Vlog", "vlog"],
   ];
   const categoryTotals = useMemo(() => {
@@ -709,16 +771,21 @@ export default function Home() {
                     {theme.code} · {day.city}
                   </p>
                 </div>
-                {preTrip && (
-                  <button
-                    className="prep-entry"
-                    onClick={() => setPrepOpen(true)}
-                  >
-                    准备 ·{" "}
-                    {prepItems.length -
-                      prepItems.filter(([key]) => prepChecks[key]).length}
+                <div className="hero-actions">
+                  <button className="prep-entry" onClick={() => setTab("budget")}>
+                    预算
                   </button>
-                )}
+                  {preTrip && (
+                    <button
+                      className="prep-entry"
+                      onClick={() => setPrepOpen(true)}
+                    >
+                      准备 ·{" "}
+                      {prepItems.length -
+                        prepItems.filter(([key]) => prepChecks[key]).length}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="hero-journey">
                 {routeNodes(day).slice(0, 3).join(" → ")}
@@ -757,22 +824,6 @@ export default function Home() {
           </div>
           {phase && <NowNext day={day} phase={phase} />}
           <WeatherCard day={day} coord={theme.coord} today={localNow.date} />
-          <section className="route-ribbon">
-            <div className="route-head">
-              <span>
-                <Icon name="map" size={15} /> 今日路线
-              </span>
-              <button onClick={() => openMap(day.city)}>完整地图 ↗</button>
-            </div>
-            <div className="route-nodes">
-              {routeNodes(day).map((n, i) => (
-                <div key={`${n}-${i}`}>
-                  <i>{i + 1}</i>
-                  <span>{n}</span>
-                </div>
-              ))}
-            </div>
-          </section>
           <section className="daily-map-block">
             <div className="section-heading">
               <h3>当日地图</h3>
@@ -793,7 +844,7 @@ export default function Home() {
                 setMapSheetPoint(point);
               }}
             />
-            <GoogleRouteActions points={dayMapPoints[day.iso] || []} />
+            <SegmentNavigation points={dayMapPoints[day.iso] || []} />
           </section>
           <section className="section-block timeline-section">
             <div className="section-heading">
@@ -1301,7 +1352,7 @@ function MapPage({
         ))}
       </div>
       <TripMap points={points} overview={!selected} onSelect={onPoint} />
-      {selected && <GoogleRouteActions points={points} />}
+      {selected && <SegmentNavigation points={points} />}
       <div className="map-legend">
         <span>
           <i className="train" />
@@ -1318,6 +1369,10 @@ function MapPage({
         <span>
           <i className="flight" />
           飞行
+        </span>
+        <span>
+          <i className="operator" />
+          运营方接驳
         </span>
       </div>
       {!selected && (
@@ -1351,7 +1406,7 @@ function MapEventSheet({
           {day.shortDate} · {event.time}
         </small>
         <h2>{event.title}</h2>
-        <p>{event.area}</p>
+        <p>{point.name}</p>
         <div>
           <span>{event.transport || "步行/现场移动"}</span>
           <span>{event.cost || "费用待定"}</span>
