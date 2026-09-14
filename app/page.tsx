@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import content from "../data/trip-content.json";
+import TripMap from "./TripMap";
+import {
+  dayMapPoints,
+  tripOverview,
+  type TripMapPoint,
+} from "../data/map-points";
 
 type Event = {
   time: string;
@@ -38,7 +44,7 @@ type Day = {
   events: Event[];
 };
 type Vlog = (typeof content.vlog)[number];
-type Tab = "today" | "days" | "tickets" | "budget" | "vlog";
+type Tab = "today" | "days" | "map" | "tickets" | "budget" | "vlog";
 type IconName =
   | "today"
   | "days"
@@ -518,6 +524,9 @@ export default function Home() {
   >("all");
   const [prepOpen, setPrepOpen] = useState(false),
     [prepChecks, setPrepChecks] = useState<Record<string, boolean>>({});
+  const [mapDayIso, setMapDayIso] = useState<string | null>(null),
+    [activeMapId, setActiveMapId] = useState<string | null>(null),
+    [mapSheetPoint, setMapSheetPoint] = useState<TripMapPoint | null>(null);
   const day = days[dayIndex];
   const theme =
     themes.find(
@@ -533,6 +542,7 @@ export default function Home() {
   const nav: [Tab, string, IconName][] = [
     ["today", "今日", "today"],
     ["days", "行程", "days"],
+    ["map", "地图", "map"],
     ["tickets", "票务", "ticket"],
     ["budget", "预算", "budget"],
     ["vlog", "Vlog", "vlog"],
@@ -589,7 +599,9 @@ export default function Home() {
         ui.dayIndex < days.length
       )
         setDayIndex(ui.dayIndex);
-      if (["today", "days", "tickets", "budget", "vlog"].includes(ui.tab))
+      if (
+        ["today", "days", "map", "tickets", "budget", "vlog"].includes(ui.tab)
+      )
         setTab(ui.tab);
       if (Number.isInteger(ui.vlogOpen)) setVlogOpen(ui.vlogOpen);
       setTimeout(() => scrollTo(0, Number(ui.scrollY) || 0), 80);
@@ -715,6 +727,27 @@ export default function Home() {
               ))}
             </div>
           </section>
+          <section className="daily-map-block">
+            <div className="section-heading">
+              <h3>当日地图</h3>
+              <button
+                onClick={() => {
+                  setMapDayIso(day.iso);
+                  setTab("map");
+                }}
+              >
+                展开地图 ↗
+              </button>
+            </div>
+            <TripMap
+              points={dayMapPoints[day.iso] || []}
+              activeId={activeMapId}
+              onSelect={(point) => {
+                setActiveMapId(point.id);
+                setMapSheetPoint(point);
+              }}
+            />
+          </section>
           <section className="section-block timeline-section">
             <div className="section-heading">
               <h3>今天怎么走</h3>
@@ -727,6 +760,9 @@ export default function Home() {
                   pills = statusPills(e),
                   state = eventStates[`${day.iso}:${index}`],
                   rail = railLink(e),
+                  mapPoint = (dayMapPoints[day.iso] || []).find(
+                    (point) => point.eventIndex === index,
+                  ),
                   vehicle = (`${e.title} ${e.transport}`.match(
                     /\b(?:FR|IC|EC|IR|RE|RJX?|ICE|Italo)\s?\d{2,5}\b/i,
                   ) || [])[0];
@@ -734,8 +770,14 @@ export default function Home() {
                   <article
                     className={`timeline-item kind-${kind} ${state ? `is-${state}` : ""} ${phase?.nowIndex === index ? "is-current" : ""}`}
                     key={`${e.time}-${index}`}
+                    onClick={() => mapPoint && setActiveMapId(mapPoint.id)}
                   >
-                    <time>{e.time}</time>
+                    <time>
+                      {mapPoint && (
+                        <b className="map-order">{mapPoint.order}</b>
+                      )}
+                      {e.time}
+                    </time>
                     <div className="rail">
                       <i>
                         <Icon name={kind} size={14} />
@@ -934,6 +976,20 @@ export default function Home() {
           />
         </section>
       )}
+      {tab === "map" && (
+        <MapPage
+          days={days}
+          selectedIso={mapDayIso}
+          selectDay={(iso) => {
+            setMapDayIso(iso);
+            setActiveMapId(null);
+          }}
+          onPoint={(point) => {
+            setActiveMapId(point.id);
+            setMapSheetPoint(point);
+          }}
+        />
+      )}
       {tab === "tickets" && (
         <section className="page-section wallet-page">
           <div className="page-title">
@@ -1084,6 +1140,13 @@ export default function Home() {
           </div>
         </section>
       )}
+      {mapSheetPoint && (
+        <MapEventSheet
+          point={mapSheetPoint}
+          day={days.find((d) => d.iso === mapSheetPoint.day)!}
+          close={() => setMapSheetPoint(null)}
+        />
+      )}
       {prepOpen && (
         <div className="modal-backdrop" onClick={() => setPrepOpen(false)}>
           <section className="prep-sheet" onClick={(e) => e.stopPropagation()}>
@@ -1147,6 +1210,113 @@ export default function Home() {
         ))}
       </nav>
     </main>
+  );
+}
+
+function MapPage({
+  days,
+  selectedIso,
+  selectDay,
+  onPoint,
+}: {
+  days: Day[];
+  selectedIso: string | null;
+  selectDay: (iso: string | null) => void;
+  onPoint: (point: TripMapPoint) => void;
+}) {
+  const selected = days.find((d) => d.iso === selectedIso),
+    points = selected ? dayMapPoints[selected.iso] || [] : tripOverview;
+  return (
+    <section className="page-section map-page">
+      <div className="page-title">
+        <h2>地图</h2>
+        <span>
+          {selected
+            ? `${selected.shortDate} · ${selected.title}`
+            : "Switzerland → Italy · 主路线"}
+        </span>
+      </div>
+      <div className="map-scope">
+        <button
+          className={!selected ? "active" : ""}
+          onClick={() => selectDay(null)}
+        >
+          全程
+        </button>
+        {days.map((day) => (
+          <button
+            key={day.iso}
+            className={selectedIso === day.iso ? "active" : ""}
+            onClick={() => selectDay(day.iso)}
+          >
+            D{day.day}
+          </button>
+        ))}
+      </div>
+      <TripMap points={points} overview={!selected} onSelect={onPoint} />
+      <div className="map-legend">
+        <span>
+          <i className="train" />
+          火车
+        </span>
+        <span>
+          <i className="walk" />
+          步行
+        </span>
+        <span>
+          <i className="cable" />
+          缆车
+        </span>
+        <span>
+          <i className="flight" />
+          飞行
+        </span>
+      </div>
+      {!selected && (
+        <p className="map-note">
+          选择某一天查看详细地点。主路线仅表达正式行程顺序，不代表精确铁路轨迹。
+        </p>
+      )}
+    </section>
+  );
+}
+
+function MapEventSheet({
+  point,
+  day,
+  close,
+}: {
+  point: TripMapPoint;
+  day: Day;
+  close: () => void;
+}) {
+  const event = day.events[point.eventIndex];
+  if (!event) return null;
+  return (
+    <div className="modal-backdrop" onClick={close}>
+      <section className="map-event-sheet" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={close}>
+          ×
+        </button>
+        <span className="map-sheet-order">{point.order}</span>
+        <small>
+          {day.shortDate} · {event.time}
+        </small>
+        <h2>{event.title}</h2>
+        <p>{event.area}</p>
+        <div>
+          <span>{event.transport || "步行/现场移动"}</span>
+          <span>{event.cost || "费用待定"}</span>
+          <span>{event.booking || "无票务"}</span>
+        </div>
+        <button
+          className="map-navigate"
+          onClick={() => openMap(event.map || point.name)}
+        >
+          Google Maps 导航 ↗
+        </button>
+      </section>
+    </div>
   );
 }
 
