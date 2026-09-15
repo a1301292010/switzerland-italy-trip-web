@@ -11,12 +11,151 @@ export type TripMapPoint = {
   day: string;
   eventIndex: number;
   order: number;
-  name: string;
+  nameZh: string;
+  nameEn: string;
+  address?: string;
+  shortLabelZh?: string;
+  shortLabelEn?: string;
   lat: number;
   lng: number;
   transport: MapTransport;
   publicArea?: boolean;
   todayPriority?: number;
+};
+
+type PointLabel = Pick<
+  TripMapPoint,
+  "nameZh" | "nameEn" | "address" | "shortLabelZh" | "shortLabelEn"
+>;
+
+const zh: Record<string, string> = {
+  "Zürich Flughafen": "苏黎世机场",
+  "Lungern Bahnhof": "龙疆火车站",
+  "Lungern Bahnhof lockers": "龙疆火车站行李柜",
+  "Mülibachersträssli 14 S-bend": "米利巴赫街 S 弯",
+  "Milchautomat Lungern": "龙疆牛奶自动售卖机",
+  "Inseli Lungern": "龙疆湖心小岛",
+  "返回 Lungern Bahnhof": "返回龙疆火车站",
+  "Lauterbrunnen Bahnhof": "劳特布龙嫩火车站",
+  "Lauterbrunnen village / Coop area": "劳特布龙嫩村中心",
+  Lauterbrunnen: "劳特布龙嫩",
+  "Interlaken Ost": "因特拉肯东站",
+  "OUTDOOR – Interlaken Shop, Höheweg 95": "跳伞集合点",
+  "Reichenbach drop zone": "赖兴巴赫跳伞降落区",
+  "Lauterbrunnen valley": "劳特布龙嫩山谷",
+  "Stechelberg, Schilthornbahn": "施特歇尔贝格雪朗峰缆车站",
+  Mürren: "米伦",
+  Allmendhubel: "阿尔门德胡贝尔",
+  "Mürren BLM": "米伦 BLM 车站",
+  Grütschalp: "格吕奇阿尔普",
+  Wengen: "文根",
+  "返回 Lauterbrunnen": "返回劳特布龙嫩",
+  Spiez: "施皮茨",
+  Visp: "菲斯普",
+  "Zermatt Bahnhof": "采尔马特火车站",
+  Gornergrat: "马特洪峰观景台",
+  "Gornergrat viewpoint": "戈尔内格拉特观景点",
+  Rotenboden: "罗滕博登",
+  Riffelsee: "里费尔湖",
+  "Second lake area": "第二湖区",
+  Riffelberg: "里费尔贝格",
+  "Zermatt village / Kirchbrücke": "采尔马特村与教堂桥",
+  "OUTDOOR Interlaken（补跳备选）": "因特拉肯补跳集合点",
+  "Lauterbrunnen Bahnhof / luggage": "劳特布龙嫩站行李点",
+  Brig: "布里格",
+  "Milano Centrale": "米兰中央火车站",
+  "Porta Venezia public area": "威尼斯门公共区域",
+  "Duomo di Milano": "米兰大教堂",
+  "Galleria Vittorio Emanuele II": "埃马努埃莱二世长廊",
+  "Piazza del Duomo": "米兰大教堂广场",
+  "Duomo di Milano entrance": "米兰大教堂入口",
+  "Duomo Rooftops": "米兰大教堂屋顶",
+  Brera: "布雷拉街区",
+  "Castello Sforzesco": "斯福尔扎城堡",
+  "Parco Sempione": "森皮奥内公园",
+  "Arco della Pace": "和平门",
+  "Porta Venezia public area / luggage": "威尼斯门行李区域",
+  "Venezia Santa Lucia": "威尼斯圣露西亚火车站",
+  "Cannaregio public area": "卡纳雷吉欧公共区域",
+  "Rialto Bridge": "里亚托桥",
+  "Piazza San Marco": "圣马可广场",
+  "Bridge of Sighs exterior": "叹息桥外观",
+  "Palazzo Ducale": "总督宫",
+  "Basilica di San Marco": "圣马可大教堂",
+  "Rialto return route": "返回里亚托桥路线",
+  "Firenze SMN": "佛罗伦萨新圣母火车站",
+  "Santa Croce public area": "圣十字区公共区域",
+  "Piazzale Michelangelo": "米开朗琪罗广场",
+  "Ponte alle Grazie": "格拉齐桥",
+  "Ponte Vecchio": "老桥",
+  "Florence Duomo": "佛罗伦萨圣母百花大教堂",
+  "Piazza della Repubblica": "共和国广场",
+  "Piazza della Signoria": "领主广场",
+  "Uffizi exterior": "乌菲兹美术馆外观",
+  "Santa Croce public area / luggage": "圣十字区行李点",
+  "Roma Termini": "罗马特米尼火车站",
+  "Colosseo / Monti public area": "斗兽场与蒙蒂公共区域",
+  "Vatican Museums entrance": "梵蒂冈博物馆入口",
+  "Vatican Museums": "梵蒂冈博物馆",
+  "Sistine Chapel": "西斯廷礼拜堂",
+  "Ponte Sant'Angelo": "圣天使桥",
+  "Piazza Navona / Prati dinner area": "纳沃纳广场与普拉蒂晚餐区",
+  "Gay Street / Coming Out area": "Gay Street 与 Coming Out 区域",
+  "Colosseo public area": "斗兽场公共区域",
+  Colosseum: "罗马斗兽场",
+  "Arch of Constantine": "君士坦丁凯旋门",
+  "Foro Romano": "古罗马广场",
+  "Palatine Hill": "帕拉蒂尼山",
+  "Monti / Piazza Venezia lunch area": "蒙蒂与威尼斯广场午餐区",
+  Vittoriano: "维托里亚诺纪念堂",
+  Campidoglio: "卡比托利欧广场",
+  "Via Monte Tarpeo viewpoint": "塔尔佩奥山观景点",
+  "Largo di Torre Argentina": "阿根廷塔广场",
+  "Piazza Navona": "纳沃纳广场",
+  Pantheon: "万神殿",
+  "Sant'Ignazio": "圣依纳爵堂",
+  "Trevi neighbourhood": "特莱维街区",
+  "Trevi Fountain": "特莱维喷泉",
+  "Spanish Steps": "西班牙阶梯",
+  "Colosseum night / dinner area": "斗兽场夜景与晚餐区",
+  "Roma Termini（rail option）": "罗马特米尼火车站（铁路方案）",
+  "Fiumicino Airport Terminal": "菲乌米奇诺机场航站楼",
+  "FCO check-in area": "FCO 值机区",
+  "FCO shopping / airside": "FCO 安检后购物区",
+  "Departure gate area": "登机口区域",
+  Lungern: "龙疆",
+  Interlaken: "因特拉肯",
+  "Return to Lauterbrunnen": "返回劳特布龙嫩",
+  Zermatt: "采尔马特",
+  Milan: "米兰",
+  Venice: "威尼斯",
+  Florence: "佛罗伦萨",
+  Rome: "罗马",
+  "Fiumicino Airport": "菲乌米奇诺机场",
+};
+
+const official: Record<string, string> = {
+  "OUTDOOR – Interlaken Shop, Höheweg 95": "OUTDOOR – Interlaken Shop",
+  "Firenze SMN": "Firenze S. M. Novella",
+  "Roma Termini（rail option）": "Roma Termini (rail option)",
+  "OUTDOOR Interlaken（补跳备选）": "OUTDOOR – Interlaken Shop (weather backup)",
+  "返回 Lungern Bahnhof": "Return to Lungern Bahnhof",
+  "返回 Lauterbrunnen": "Return to Lauterbrunnen",
+};
+
+const addresses: Record<string, string> = {
+  "OUTDOOR – Interlaken Shop, Höheweg 95": "Höheweg 95, 3800 Interlaken",
+  "OUTDOOR Interlaken（补跳备选）": "Höheweg 95, 3800 Interlaken",
+};
+
+const label = (name: string): PointLabel => {
+  const nameZh = zh[name];
+  if (!nameZh) throw new Error(`Missing bilingual map label: ${name}`);
+  return {
+    nameZh,
+    nameEn: official[name] || name,
+    address: addresses[name],
+  };
 };
 
 const p = (
@@ -34,7 +173,7 @@ const p = (
   day,
   eventIndex,
   order,
-  name,
+  ...label(name),
   lat,
   lng,
   transport,

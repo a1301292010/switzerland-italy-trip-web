@@ -64,7 +64,7 @@ export default function TripMap({
         });
         const marker = L.marker([point.lat, point.lng], {
           icon,
-          title: point.name,
+          title: `${point.nameZh} · ${point.nameEn}${point.address ? ` · ${point.address}` : ""}`,
         }).addTo(map);
         marker.on("click", () => selectRef.current?.(point));
         markers.current[point.id] = marker;

@@ -418,7 +418,8 @@ function SegmentNavigation({ points }: { points: TripMapPoint[] }) {
           <div className={`nav-segment mode-${segment.mode}`} key={`${from.id}-${to.id}-${index}`}>
             <span>{from.order} → {to.order}</span>
             <div>
-              <b>{from.name} → {to.name}</b>
+              <b>{from.nameZh} → {to.nameZh}</b>
+              <small>{from.nameEn} → {to.nameEn}</small>
               {segment.mode === "info" ? (
                 <small>{info}</small>
               ) : (
@@ -1002,7 +1003,10 @@ export default function Home() {
                               }}
                             >
                               <Icon name="map" size={17} />
-                              地图定位 {stepOrder}
+                              <span>
+                                地图定位 {stepOrder} · {mapPoint.shortLabelZh || mapPoint.nameZh}
+                                <small>{mapPoint.shortLabelEn || mapPoint.nameEn}</small>
+                              </span>
                             </button>
                           )}
                           {e.map && (
@@ -1495,8 +1499,9 @@ function MapEventSheet({
         <small>
           {day.shortDate} · {event.time}
         </small>
-        <h2>{event.title}</h2>
-        <p>{point.name}</p>
+        <h2>{point.nameZh}</h2>
+        <p className="map-point-en">{point.nameEn}</p>
+        {point.address && <address>{point.address}</address>}
         <div>
           <span>{event.transport || "步行/现场移动"}</span>
           <span>{event.cost || "费用待定"}</span>
