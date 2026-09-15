@@ -3,8 +3,11 @@
   "dates": { "start": "2026-09-27", "end": "2026-10-05" },
   "cities": ["Interlaken", "Lauterbrunnen", "Mürren", "Lungern", "Milan", "Florence", "Rome", "Vatican City"],
   "confirmed": {
-    "swissTravelPassDays": 4,
-    "milanDuomo": { "date": "2026-10-01", "time": "09:00", "status": "purchased" }
+    "swissTravelPass": { "days": 4, "start": "2026-09-27", "end": "2026-09-30", "status": "purchased-paid" },
+    "milanDuomo": { "date": "2026-10-01", "time": "09:00", "status": "purchased-paid" },
+    "vaticanMuseums": { "date": "2026-10-03", "time": "16:00", "status": "purchased-paid" },
+    "dogesPalace": { "date": "2026-10-02", "time": "09:15", "status": "purchased-paid" },
+    "stMarksBasilica": { "date": "2026-10-02", "time": "11:00", "status": "purchased-paid" }
   },
   "privacy": "Public, redacted itinerary data only"
 }

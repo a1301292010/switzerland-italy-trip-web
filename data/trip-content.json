@@ -1,14 +1,20 @@
 {
   "meta": {
     "title": "瑞士 → 意大利",
-    "subtitle": "2026年9月27日—10月7日",
+    "subtitle": "2026年9月27日—10月5日",
     "sourceVersion": "V1.5 · 2026-09-08",
     "privacy": "公开脱敏执行版"
   },
   "confirmed": {
-    "swissTravelPass": "4日二等 · 2026-09-27—09-30 · 待购买",
+    "swissTravelPass": "4日二等 · 2026-09-27—09-30 · 已购 · 已付",
     "milanDuomo": "2026-10-01 09:00 · 已购",
-    "insurance": "已购 · 已付 CNY 150；续期与跳伞承保待确认"
+    "vaticanMuseums": "2026-10-03 16:00 · 已购 · 已付",
+    "dogesPalace": "2026-10-02 09:15 · 已购 · 已付",
+    "stMarksBasilica": "2026-10-02 11:00 · 已购 · 已付",
+    "milanToVenice": "2026-10-01 16:45 · 已购 · 已付",
+    "veniceToFlorence": "2026-10-02 14:05 · 已购 · 已付",
+    "florenceToRome": "2026-10-03 11:43 · 已购 · 已付",
+    "insurance": "已购 · 已付 CNY 150；当前保单覆盖至2026-10-06 23:59，跳伞承保待确认"
   },
   "days": [
     {
@@ -53,7 +59,7 @@
           "transport": "SBB：Zürich Flughafen→Luzern/Interlaken方向→Lungern",
           "duration": "约2h30–3h",
           "cost": "STP覆盖普通公共交通",
-          "booking": "STP出发前买好",
+          "booking": "STP已购 · 已付；电子票离线保存",
           "photo": "沿途湖景",
           "food": "吃机场买的早餐/零食",
           "luggage": "到Lungern先寄存",
@@ -1413,7 +1419,7 @@
       "name": "Vatican Museums – Admission Ticket",
       "time": "16:00",
       "price": "€25",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "官方正式电子票；€20门票+€5预约费；建议15:30左右到入口",
       "url": "https://tickets.museivaticani.va/home"
     },
@@ -1422,7 +1428,7 @@
       "name": "Milan Duomo Rooftop + Cathedral",
       "time": "09:00",
       "price": "€26",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "08:35–08:40到；三脚架留住宿；Wallet原票截图待补入",
       "url": "https://ticket.duomomilano.it/en/"
     },
@@ -1431,7 +1437,7 @@
       "name": "St Mark's Basilica",
       "time": "11:00–11:30",
       "price": "€10",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "10:45–10:50到；基础Basilica",
       "url": "https://tickets.basilicasanmarco.it/en/"
     },
@@ -1440,7 +1446,7 @@
       "name": "Doge's Palace",
       "time": "09:15",
       "price": "€30",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "08:50左右到；Correr 16:50不使用",
       "url": "https://palazzoducale.visitmuve.it/en/tickets/"
     },
@@ -1449,7 +1455,7 @@
       "name": "Venezia S. Lucia→Firenze SMN",
       "time": "14:05→16:20",
       "price": "€42.90",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "Italo 8915｜13:20到站",
       "url": "https://www.trenitalia.com/en.html"
     },
@@ -1458,7 +1464,7 @@
       "name": "Firenze SMN→Roma Termini",
       "time": "11:43→13:24",
       "price": "€29.90",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "Italo 9923｜11:00到站",
       "url": "https://www.trenitalia.com/en.html"
     },
@@ -1467,7 +1473,7 @@
       "name": "Milano Centrale→Venezia S. Lucia",
       "time": "16:45→19:12",
       "price": "€19",
-      "status": "已购",
+      "status": "已购 · 已付",
       "reminder": "FR9747｜16:00–16:10到站",
       "url": "https://www.trenitalia.com/en.html"
     },
@@ -1476,8 +1482,8 @@
       "name": "Swiss Travel Pass 4日二等",
       "time": "连续4日",
       "price": "CHF309",
-      "status": "待购买",
-      "reminder": "2026成人25+官方价；普通SBB无需逐班买票",
+      "status": "已购 · 已付",
+      "reminder": "2026成人二等4日票；2026-09-27至09-30连续使用；普通SBB无需逐班买票",
       "url": "https://www.sbb.ch/en/tickets-offers/tickets/guests-abroad/swiss-travel-pass.html"
     },
     {
@@ -1554,7 +1560,7 @@
     },
     {
       "date": "临近条件确认后买",
-      "name": "STP、Gornergrat、瑞士→米兰",
+      "name": "Gornergrat、瑞士→米兰",
       "time": "不抢或需保留天气弹性",
       "price": "",
       "status": "",
@@ -1576,7 +1582,7 @@
       "time": "2026-09-27至10-06（当前保单）",
       "price": "CNY 150",
       "status": "已购 · 已付",
-      "reminder": "需延长至10月7日23:59；跳伞承保需取得书面确认",
+      "reminder": "当前保单覆盖至10月6日23:59；跳伞承保需取得书面确认",
       "url": ""
     }
   ],
@@ -1602,8 +1608,8 @@
       "currency": "CHF",
       "low": "309",
       "high": "309",
-      "payment": "未付",
-      "note": "2026成人二等"
+      "payment": "已付",
+      "note": "2026成人二等4日票；2026-09-27至09-30连续使用"
     },
     {
       "name": "跳伞",
@@ -1755,7 +1761,7 @@
       "low": "150",
       "high": "150",
       "payment": "已付",
-      "note": "京东安联申根之王珍珠计划；已付¥150；现保单10/6 23:59到期，需延至10/7"
+      "note": "京东安联申根之王珍珠计划；已付¥150；现保单覆盖至10/6 23:59；跳伞承保待书面确认"
     },
     {
       "name": "机场购物",
@@ -1838,7 +1844,7 @@
       "note": "10/6独立单列，原餐饮行仅瑞士/意大利"
     },
     {
-      "name": "10/7浦东回家预留",
+      "name": "返程浦东回家预留",
       "currency": "CNY",
       "low": "100",
       "high": "300",
@@ -2601,7 +2607,7 @@
       "branch": ""
     },
     {
-      "group": "10月5日至10月7日 返程与最终旁白",
+      "group": "10月5日 返程与最终旁白",
       "location": "罗马离店与FCO",
       "background": "返程段无需介绍机场历史。内容重点是核对旅程结果：哪些计划完成、哪些因为天气或体力改变，以及一个人拍摄时最难的部分。",
       "script10": "要离开罗马了。现在去FCO，先把值机、退税和安检完成，再考虑购物。",
@@ -2623,7 +2629,7 @@
       "branch": ""
     },
     {
-      "group": "10月5日至10月7日 返程与最终旁白",
+      "group": "10月5日 返程与最终旁白",
       "location": "最终旁白模板",
       "background": "",
       "script10": "",
@@ -2639,8 +2645,8 @@
   "budgetSummary": {
     "base": "CNY 28,360.71—32,261.51",
     "recommended": "CNY 29,860.71—34,761.51",
-    "confirmed": "CNY 17,642.71（不等同全部已支付）",
+    "confirmed": "CNY 20,423.71（含已购STP；不等同全部已支付）",
     "rates": "预算汇率 CHF=9.0，EUR=8.4"
   },
-  "updated": "2026-09-13"
+  "updated": "2026-09-15"
 }
