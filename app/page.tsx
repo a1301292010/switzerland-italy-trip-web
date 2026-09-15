@@ -846,10 +846,8 @@ export default function Home() {
                   className={i === dayIndex ? "active" : ""}
                   onClick={() => setDayIndex(i)}
                 >
-                  <small>
-                    {th.flag} DAY {i + 1}
-                  </small>
                   <b>{d.shortDate}</b>
+                  <small>{d.weekday}</small>
                   <span>{th.code}</span>
                 </button>
               );
