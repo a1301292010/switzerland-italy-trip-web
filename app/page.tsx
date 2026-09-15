@@ -873,6 +873,7 @@ export default function Home() {
             </div>
             <TripMap
               points={todayMapPoints}
+              numberMode="step"
               activeId={activeMapId}
               onSelect={(point) => {
                 setActiveMapId(point.id);
@@ -898,12 +899,11 @@ export default function Home() {
                   eventMapPoints = fullDayPoints.filter(
                     (point) => point.eventIndex === index,
                   ),
-                  mapPoint = eventMapPoints[0],
-                  mapOrder = eventMapPoints.length
-                    ? eventMapPoints.length === 1
-                      ? `${eventMapPoints[0].order}`
-                      : `${eventMapPoints[0].order}–${eventMapPoints[eventMapPoints.length - 1].order}`
-                    : null,
+                  mapPoint =
+                    todayMapPoints.find(
+                      (point) => point.eventIndex === index,
+                    ) || eventMapPoints[0],
+                  stepOrder = `${index + 1}`,
                   vehicle = (`${e.title} ${e.transport}`.match(
                     /\b(?:FR|IC|EC|IR|RE|RJX?|ICE|Italo)\s?\d{2,5}\b/i,
                   ) || [])[0];
@@ -913,9 +913,7 @@ export default function Home() {
                     key={`${e.time}-${index}`}
                   >
                     <time>
-                      {mapOrder && (
-                        <b className="map-order">{mapOrder}</b>
-                      )}
+                      <b className="map-order">{stepOrder}</b>
                       {e.time}
                     </time>
                     <div className="rail">
@@ -985,7 +983,7 @@ export default function Home() {
                               }}
                             >
                               <Icon name="map" size={17} />
-                              地图定位 {mapOrder}
+                              地图定位 {stepOrder}
                             </button>
                           )}
                           {e.map && (
@@ -1308,6 +1306,7 @@ export default function Home() {
         <MapEventSheet
           point={mapSheetPoint}
           day={days.find((d) => d.iso === mapSheetPoint.day)!}
+          mode={tab === "today" ? "step" : "point"}
           close={() => setMapSheetPoint(null)}
         />
       )}
@@ -1453,10 +1452,12 @@ function MapPage({
 function MapEventSheet({
   point,
   day,
+  mode,
   close,
 }: {
   point: TripMapPoint;
   day: Day;
+  mode: "step" | "point";
   close: () => void;
 }) {
   const event = day.events[point.eventIndex];
@@ -1467,7 +1468,11 @@ function MapEventSheet({
         <button className="modal-close" onClick={close}>
           ×
         </button>
-        <span className="map-sheet-order">{point.order}</span>
+        <span className="map-sheet-order">
+          {mode === "step"
+            ? `Step ${point.eventIndex + 1}`
+            : `Point ${point.order}`}
+        </span>
         <small>
           {day.shortDate} · {event.time}
         </small>

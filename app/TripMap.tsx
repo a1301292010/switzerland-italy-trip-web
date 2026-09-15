@@ -18,11 +18,13 @@ export default function TripMap({
   activeId,
   onSelect,
   overview = false,
+  numberMode = "point",
 }: {
   points: TripMapPoint[];
   activeId?: string | null;
   onSelect?: (point: TripMapPoint) => void;
   overview?: boolean;
+  numberMode?: "step" | "point";
 }) {
   const host = useRef<HTMLDivElement>(null),
     mapRef = useRef<LeafletMap | null>(null),
@@ -54,7 +56,7 @@ export default function TripMap({
           .filter((item) => item.lat === point.lat && item.lng === point.lng).length;
         const icon = L.divIcon({
           className: "trip-pin-wrap",
-          html: `<span class="trip-pin ${overview ? "overview" : ""}" style="translate:${duplicate * 10}px ${duplicate * -5}px">${overview ? index + 1 : point.order}</span>`,
+          html: `<span class="trip-pin ${overview ? "overview" : ""}" style="translate:${duplicate * 10}px ${duplicate * -5}px">${overview ? index + 1 : numberMode === "step" ? point.eventIndex + 1 : point.order}</span>`,
           iconSize: [30, 36],
           iconAnchor: [15, 34],
         });
@@ -99,7 +101,7 @@ export default function TripMap({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [points, overview]);
+  }, [points, overview, numberMode]);
   useEffect(() => {
     if (!activeId) return;
     const marker = markers.current[activeId];

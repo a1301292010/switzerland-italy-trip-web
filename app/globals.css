@@ -69,3 +69,4 @@
 @keyframes route-drift{from{stroke-dashoffset:42;opacity:.18}to{stroke-dashoffset:0;opacity:1}}
 @media(prefers-reduced-motion:reduce){.city-art,.route-line{animation:none}.itinerary-rows>button{transition:none}}
 @media(max-width:380px){.hero-card h2{font-size:28px}.hero-foot{grid-template-columns:1fr}.hero-foot span:last-child{text-align:left}.itinerary-page .page-title:after{display:none}}
+.map-sheet-order{display:inline-grid;width:auto;min-width:28px;padding:0 9px;border-radius:999px}
