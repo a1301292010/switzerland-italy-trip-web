@@ -928,6 +928,14 @@ export default function Home() {
                       (point) => point.eventIndex === index,
                     ) || eventMapPoints[0],
                   stepOrder = `${index + 1}`,
+                  destinationPoint =
+                    eventMapPoints[eventMapPoints.length - 1] || mapPoint,
+                  routeZh = eventMapPoints
+                    .map((point) => point.shortLabelZh || point.nameZh)
+                    .join(" → "),
+                  routeEn = eventMapPoints
+                    .map((point) => point.shortLabelEn || point.nameEn)
+                    .join(" → "),
                   vehicle = (`${e.title} ${e.transport}`.match(
                     /\b(?:FR|IC|EC|IR|RE|RJX?|ICE|Italo)\s?\d{2,5}\b/i,
                   ) || [])[0];
@@ -971,6 +979,25 @@ export default function Home() {
                         )}
                       </div>
                       <div className="event-expanded">
+                        <strong className="event-action-title">{e.title}</strong>
+                        {destinationPoint && (
+                          <div className="event-destination">
+                            <b>
+                              {destinationPoint.shortLabelZh ||
+                                destinationPoint.nameZh}
+                            </b>
+                            <small>
+                              {destinationPoint.shortLabelEn ||
+                                destinationPoint.nameEn}
+                            </small>
+                          </div>
+                        )}
+                        {eventMapPoints.length > 1 && (
+                          <div className="event-route-summary">
+                            <span>{routeZh}</span>
+                            <small>{routeEn}</small>
+                          </div>
+                        )}
                         <small>
                           {e.transport}
                           {e.duration ? ` · ${e.duration}` : ""}
@@ -1004,8 +1031,10 @@ export default function Home() {
                             >
                               <Icon name="map" size={17} />
                               <span>
-                                地图定位 {stepOrder} · {mapPoint.shortLabelZh || mapPoint.nameZh}
-                                <small>{mapPoint.shortLabelEn || mapPoint.nameEn}</small>
+                                定位 · {mapPoint.shortLabelZh || mapPoint.nameZh}
+                                <small>
+                                  {mapPoint.shortLabelEn || mapPoint.nameEn} · Step {stepOrder}
+                                </small>
                               </span>
                             </button>
                           )}
