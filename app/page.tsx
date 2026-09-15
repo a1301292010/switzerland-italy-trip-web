@@ -675,7 +675,6 @@ export default function Home() {
     [mapFocusRequestId, setMapFocusRequestId] = useState(0),
     [mapSheetPoint, setMapSheetPoint] = useState<TripMapPoint | null>(null);
   const dailyMapRef = useRef<HTMLElement>(null);
-  const suppressTodayMapSheetUntil = useRef(0);
   const day = days[dayIndex];
   const theme = themes[dayTheme[day.iso]];
   const fullDayPoints = dayMapPoints[day.iso] || [];
@@ -798,7 +797,6 @@ export default function Home() {
   function focusTodayMap(point: TripMapPoint) {
     const target = dailyMapRef.current;
     if (!target) return;
-    suppressTodayMapSheetUntil.current = performance.now() + 1400;
     setMapSheetPoint(null);
     setActiveMapId(point.id);
     target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -858,7 +856,9 @@ export default function Home() {
                     ? "规划参考 · T−7 开启实时天气"
                     : "实时天气可用"}
                 </span>
-                <span>{day.budget}</span>
+                <span className="hero-reminder">
+                  提醒 · {day.hardTime.split(/[；;]/)[0] || "无固定预约"}
+                </span>
               </div>
             </div>
           </section>
@@ -902,14 +902,12 @@ export default function Home() {
               focusRequestId={mapFocusRequestId}
               activeId={activeMapId}
               onSelect={(point) => {
-                if (performance.now() < suppressTodayMapSheetUntil.current)
-                  return;
                 setActiveMapId(point.id);
                 setMapSheetPoint(point);
               }}
             />
             <p className="compact-map-note">
-              Today 显示 {todayMapPoints.length} 个主要执行点 · 完整 {fullDayPoints.length} 个点请展开地图
+              Today 显示重点步骤 · 编号与下方行程一致 · 完整 {fullDayPoints.length} 个点请展开地图
             </p>
           </section>
           <section className="section-block timeline-section">
