@@ -797,6 +797,7 @@ export default function Home() {
   function focusTodayMap(point: TripMapPoint) {
     const target = dailyMapRef.current;
     if (!target) return;
+    setMapSheetPoint(null);
     setActiveMapId(point.id);
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     const started = performance.now();
@@ -805,7 +806,6 @@ export default function Home() {
       const visible = rect.top < innerHeight * 0.72 && rect.bottom > innerHeight * 0.28;
       if (visible || performance.now() - started > 1200) {
         setMapFocusRequestId((value) => value + 1);
-        setMapSheetPoint(point);
         return;
       }
       requestAnimationFrame(focusWhenVisible);
