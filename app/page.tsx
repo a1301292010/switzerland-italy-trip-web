@@ -8,6 +8,7 @@ import {
   tripOverview,
   type TripMapPoint,
 } from "../data/map-points";
+import { selectInitialDayIndex } from "../data/trip-startup";
 
 type Event = {
   time: string;
@@ -557,8 +558,10 @@ function zurichNow(at = new Date()) {
   };
 }
 function initialDay() {
-  const i = days.findIndex((d) => d.iso === zurichNow().date);
-  return i >= 0 ? i : 0;
+  return selectInitialDayIndex(
+    days.map((day) => day.iso),
+    zurichNow().date,
+  );
 }
 function eventTimes(time: string) {
   const matches = [...time.matchAll(/(\d{1,2}):(\d{2})/g)].map(
@@ -664,7 +667,6 @@ export default function Home() {
     {},
   );
   const [clock, setClock] = useState(() => new Date());
-  const [restored, setRestored] = useState(false);
   const [ticketFilter, setTicketFilter] = useState<
     "all" | "buy" | "check" | "done"
   >("all");
@@ -736,26 +738,16 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    scrollTo(0, 0);
     try {
       setEventStates(
         JSON.parse(localStorage.getItem("trip-execution-v1") || "{}"),
       );
       setPrepChecks(JSON.parse(localStorage.getItem("trip-prep-v1") || "{}"));
-      const ui = JSON.parse(localStorage.getItem("trip-ui-v1") || "{}");
-      if (
-        Number.isInteger(ui.dayIndex) &&
-        ui.dayIndex >= 0 &&
-        ui.dayIndex < days.length
-      )
-        setDayIndex(ui.dayIndex);
-      if (
-        ["today", "days", "map", "tickets", "budget", "vlog"].includes(ui.tab)
-      )
-        setTab(ui.tab);
-      if (Number.isInteger(ui.vlogOpen)) setVlogOpen(ui.vlogOpen);
-      setTimeout(() => scrollTo(0, Number(ui.scrollY) || 0), 80);
+      localStorage.removeItem("trip-ui-v1");
     } catch {}
-    setRestored(true);
+    requestAnimationFrame(() => scrollTo(0, 0));
     if ("serviceWorker" in navigator)
       navigator.serviceWorker
         .register("/sw.js")
@@ -772,17 +764,6 @@ export default function Home() {
         })
         .catch(() => {});
   }, []);
-  useEffect(() => {
-    if (!restored) return;
-    const save = () =>
-      localStorage.setItem(
-        "trip-ui-v1",
-        JSON.stringify({ dayIndex, tab, vlogOpen, scrollY: scrollY }),
-      );
-    save();
-    addEventListener("beforeunload", save);
-    return () => removeEventListener("beforeunload", save);
-  }, [dayIndex, tab, vlogOpen, restored]);
   function setExecution(index: number, state: LocalState) {
     const key = `${day.iso}:${index}`;
     const next = { ...eventStates, [key]: state };
