@@ -1,4 +1,4 @@
-const CACHE = "trip-v17-v1";
+const CACHE = "trip-v17-v2";
 const CORE = ["/", "/manifest.webmanifest", "/favicon.svg"];
 
 self.addEventListener("install", event => {

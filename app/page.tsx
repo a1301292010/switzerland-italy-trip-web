@@ -675,6 +675,7 @@ export default function Home() {
     [mapFocusRequestId, setMapFocusRequestId] = useState(0),
     [mapSheetPoint, setMapSheetPoint] = useState<TripMapPoint | null>(null);
   const dailyMapRef = useRef<HTMLElement>(null);
+  const suppressTodayMapSheetUntil = useRef(0);
   const day = days[dayIndex];
   const theme = themes[dayTheme[day.iso]];
   const fullDayPoints = dayMapPoints[day.iso] || [];
@@ -797,6 +798,7 @@ export default function Home() {
   function focusTodayMap(point: TripMapPoint) {
     const target = dailyMapRef.current;
     if (!target) return;
+    suppressTodayMapSheetUntil.current = performance.now() + 1400;
     setMapSheetPoint(null);
     setActiveMapId(point.id);
     target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -900,6 +902,8 @@ export default function Home() {
               focusRequestId={mapFocusRequestId}
               activeId={activeMapId}
               onSelect={(point) => {
+                if (performance.now() < suppressTodayMapSheetUntil.current)
+                  return;
                 setActiveMapId(point.id);
                 setMapSheetPoint(point);
               }}
