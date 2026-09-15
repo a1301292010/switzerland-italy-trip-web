@@ -19,12 +19,14 @@ export default function TripMap({
   onSelect,
   overview = false,
   numberMode = "point",
+  focusRequestId = 0,
 }: {
   points: TripMapPoint[];
   activeId?: string | null;
   onSelect?: (point: TripMapPoint) => void;
   overview?: boolean;
   numberMode?: "step" | "point";
+  focusRequestId?: number;
 }) {
   const host = useRef<HTMLDivElement>(null),
     mapRef = useRef<LeafletMap | null>(null),
@@ -105,9 +107,22 @@ export default function TripMap({
   useEffect(() => {
     if (!activeId) return;
     const marker = markers.current[activeId];
-    if (marker && mapRef.current)
-      mapRef.current.setView(marker.getLatLng(), 15, { animate: true });
-  }, [activeId]);
+    if (!marker || !mapRef.current) return;
+    Object.values(markers.current).forEach((item) =>
+      item.getElement()?.classList.remove("is-active"),
+    );
+    const element = marker.getElement();
+    if (element) {
+      element.classList.remove("is-active");
+      void element.offsetWidth;
+      element.classList.add("is-active");
+    }
+    mapRef.current.flyTo(
+      marker.getLatLng(),
+      numberMode === "step" ? 16 : 15,
+      { animate: true, duration: 0.65 },
+    );
+  }, [activeId, focusRequestId, numberMode]);
   return (
     <div
       className="trip-map"

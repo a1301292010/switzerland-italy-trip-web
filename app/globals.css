@@ -70,3 +70,4 @@
 @media(prefers-reduced-motion:reduce){.city-art,.route-line{animation:none}.itinerary-rows>button{transition:none}}
 @media(max-width:380px){.hero-card h2{font-size:28px}.hero-foot{grid-template-columns:1fr}.hero-foot span:last-child{text-align:left}.itinerary-page .page-title:after{display:none}}
 .map-sheet-order{display:inline-grid;width:auto;min-width:28px;padding:0 9px;border-radius:999px}
+.trip-pin-wrap.is-active{z-index:1000!important}.trip-pin-wrap.is-active .trip-pin{transform:scale(1.28);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 30%,transparent),0 5px 14px rgba(0,0,0,.28);animation:pin-focus .72s cubic-bezier(.2,.75,.25,1) both}@keyframes pin-focus{0%{transform:scale(1)}45%{transform:scale(1.42)}100%{transform:scale(1.28)}}@media(prefers-reduced-motion:reduce){.trip-pin-wrap.is-active .trip-pin{animation:none}}

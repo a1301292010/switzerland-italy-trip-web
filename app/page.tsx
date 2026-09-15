@@ -671,12 +671,16 @@ export default function Home() {
     [prepChecks, setPrepChecks] = useState<Record<string, boolean>>({});
   const [mapDayIso, setMapDayIso] = useState<string | null>(null),
     [activeMapId, setActiveMapId] = useState<string | null>(null),
+    [mapFocusRequestId, setMapFocusRequestId] = useState(0),
     [mapSheetPoint, setMapSheetPoint] = useState<TripMapPoint | null>(null);
   const dailyMapRef = useRef<HTMLElement>(null);
   const day = days[dayIndex];
   const theme = themes[dayTheme[day.iso]];
   const fullDayPoints = dayMapPoints[day.iso] || [];
-  const todayMapPoints = compactTodayPoints(fullDayPoints);
+  const todayMapPoints = useMemo(
+    () => compactTodayPoints(fullDayPoints),
+    [fullDayPoints],
+  );
   const dayTickets = useMemo(
     () =>
       content.tickets.filter(
@@ -789,6 +793,24 @@ export default function Home() {
     setPrepChecks(next);
     localStorage.setItem("trip-prep-v1", JSON.stringify(next));
   }
+  function focusTodayMap(point: TripMapPoint) {
+    const target = dailyMapRef.current;
+    if (!target) return;
+    setActiveMapId(point.id);
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    const started = performance.now();
+    const focusWhenVisible = () => {
+      const rect = target.getBoundingClientRect();
+      const visible = rect.top < innerHeight * 0.72 && rect.bottom > innerHeight * 0.28;
+      if (visible || performance.now() - started > 1200) {
+        setMapFocusRequestId((value) => value + 1);
+        setMapSheetPoint(point);
+        return;
+      }
+      requestAnimationFrame(focusWhenVisible);
+    };
+    requestAnimationFrame(focusWhenVisible);
+  }
   return (
     <main className={`app-shell theme-${theme.key} tab-${tab}`}>
       {tab === "today" && (
@@ -874,6 +896,7 @@ export default function Home() {
             <TripMap
               points={todayMapPoints}
               numberMode="step"
+              focusRequestId={mapFocusRequestId}
               activeId={activeMapId}
               onSelect={(point) => {
                 setActiveMapId(point.id);
@@ -966,16 +989,12 @@ export default function Home() {
                             <button
                               className="map-locate"
                               onClick={() => {
-                                setActiveMapId(mapPoint.id);
                                 if (
                                   todayMapPoints.some(
                                     (point) => point.id === mapPoint.id,
                                   )
                                 ) {
-                                  dailyMapRef.current?.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "center",
-                                  });
+                                  focusTodayMap(mapPoint);
                                 } else {
                                   setMapDayIso(day.iso);
                                   setTab("map");
