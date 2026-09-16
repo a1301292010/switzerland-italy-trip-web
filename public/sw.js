@@ -1,4 +1,4 @@
-const CACHE = "trip-v17-v2";
+const CACHE = "trip-v17-v3";
 const CORE = ["/", "/manifest.webmanifest", "/favicon.svg"];
 
 self.addEventListener("install", event => {
@@ -24,6 +24,11 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Private credential responses must never enter Cache Storage.
+  if (url.pathname.startsWith("/api/credentials/")) {
+    event.respondWith(fetch(request));
+    return;
+  }
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(response => {
       const copy = response.clone();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import content from "../data/trip-content.json";
 import TripMap from "./TripMap";
 import {
@@ -15,7 +15,13 @@ import {
   type CredentialDocument,
   type DocumentCategory,
 } from "../data/documents";
-import { resolveDocumentSource, type ResolvedDocument } from "../lib/document-provider";
+import {
+  CredentialVaultLockedError,
+  lockCredentialVault,
+  resolveDocumentSource,
+  unlockCredentialVault,
+  type ResolvedDocument,
+} from "../lib/document-provider";
 
 type Event = {
   time: string;
@@ -684,6 +690,12 @@ export default function Home() {
     documents: CredentialDocument[];
     index: number;
   } | null>(null);
+  const [credentialUnlockOpen, setCredentialUnlockOpen] = useState(false);
+  const [credentialRetry, setCredentialRetry] = useState(0);
+  const openCredentialUnlock = useCallback(
+    () => setCredentialUnlockOpen(true),
+    [],
+  );
   const [prepOpen, setPrepOpen] = useState(false),
     [prepChecks, setPrepChecks] = useState<Record<string, boolean>>({});
   const [mapDayIso, setMapDayIso] = useState<string | null>(null),
@@ -1250,6 +1262,17 @@ export default function Home() {
                 {label}
               </button>
             ))}
+            <button
+              type="button"
+              className="credential-lock"
+              onClick={async () => {
+                await lockCredentialVault();
+                setCredentialViewer(null);
+                setCredentialUnlockOpen(false);
+              }}
+            >
+              锁定凭证库
+            </button>
           </div>
           <div className="ticket-list">
             {shownTickets.map((t, i) => {
@@ -1466,6 +1489,20 @@ export default function Home() {
             )
           }
           close={() => setCredentialViewer(null)}
+          retryKey={credentialRetry}
+          onLocked={openCredentialUnlock}
+        />
+      )}
+      {credentialUnlockOpen && (
+        <UnlockCredentialModal
+          close={() => {
+            setCredentialUnlockOpen(false);
+            setCredentialViewer(null);
+          }}
+          unlocked={() => {
+            setCredentialUnlockOpen(false);
+            setCredentialRetry((value) => value + 1);
+          }}
         />
       )}
       <nav className="bottom-nav" aria-label="主导航">
@@ -1491,11 +1528,15 @@ function CredentialViewer({
   index,
   select,
   close,
+  retryKey,
+  onLocked,
 }: {
   documents: CredentialDocument[];
   index: number;
   select: (index: number) => void;
   close: () => void;
+  retryKey: number;
+  onLocked: () => void;
 }) {
   const credential = documents[index];
   const [source, setSource] = useState<ResolvedDocument | null>(null);
@@ -1505,13 +1546,26 @@ function CredentialViewer({
     let active = true;
     setSource(null);
     setError("");
+    let blobUrl = "";
     resolveDocumentSource(credential)
-      .then((resolved) => active && setSource(resolved))
-      .catch((reason) => active && setError(String(reason)));
+      .then((resolved) => {
+        if (!active) {
+          if (resolved.kind === "blob") URL.revokeObjectURL(resolved.url);
+          return;
+        }
+        if (resolved.kind === "blob") blobUrl = resolved.url;
+        setSource(resolved);
+      })
+      .catch((reason) => {
+        if (!active) return;
+        if (reason instanceof CredentialVaultLockedError) onLocked();
+        else setError(reason instanceof Error ? reason.message : String(reason));
+      });
     return () => {
       active = false;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [credential]);
+  }, [credential, retryKey, onLocked]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && close();
@@ -1564,13 +1618,66 @@ function CredentialViewer({
             </dl>
           </section>
         )}
-        {source?.kind === "signed" &&
+        {source?.kind === "blob" &&
           (credential.type === "image" ? (
             <img className="credential-image" src={source.url} alt={credential.titleZh} />
           ) : (
             <iframe className="credential-frame" src={source.url} title={credential.titleZh} />
           ))}
       </main>
+    </div>
+  );
+}
+
+function UnlockCredentialModal({
+  close,
+  unlocked,
+}: {
+  close: () => void;
+  unlocked: () => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="credential-unlock-backdrop" role="presentation">
+      <form
+        className="credential-unlock"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setBusy(true);
+          setError("");
+          try {
+            await unlockCredentialVault(password);
+            setPassword("");
+            unlocked();
+          } catch (reason) {
+            setError(reason instanceof Error ? reason.message : "密码错误");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <button type="button" className="modal-close" onClick={close} aria-label="关闭">×</button>
+        <small>PRIVATE CREDENTIAL VAULT</small>
+        <h2>凭证库密码</h2>
+        <p>解锁状态只保留在本次浏览器会话中，不会在网页存储密码。</p>
+        <label>
+          <span>密码</span>
+          <input
+            autoFocus
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </label>
+        {error && <p className="credential-unlock-error">{error}</p>}
+        <button type="submit" className="credential-unlock-submit" disabled={busy || !password}>
+          {busy ? "正在验证…" : "解锁并查看"}
+        </button>
+      </form>
     </div>
   );
 }

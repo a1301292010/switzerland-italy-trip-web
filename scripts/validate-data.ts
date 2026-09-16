@@ -23,6 +23,8 @@ for (const document of documents) {
     fail(`credential document ${document.id} is missing bilingual titles`);
   if (document.storage.kind === "signed" && !document.storage.endpoint.startsWith("/api/"))
     fail(`credential document ${document.id} must use a same-origin signed endpoint`);
+  if (document.storage.kind !== "signed")
+    fail(`credential document ${document.id} must use the private credential API`);
   const serializedDocument = JSON.stringify(document);
   if (/public\/|public\\|file:\/\/|[A-Z]:\\/i.test(serializedDocument))
     fail(`credential document ${document.id} exposes a public or local file path`);

@@ -7,13 +7,14 @@
   },
   "scripts": {
     "validate:data": "node --experimental-strip-types scripts/validate-data.ts",
+    "check:functions": "tsc -p tsconfig.functions.json",
     "prebuild": "npm run validate:data",
     "dev": "vinext dev",
     "build": "vinext build",
-    "prebuild:pages": "npm run validate:data",
+    "prebuild:pages": "npm run validate:data && npm run check:functions",
     "build:pages": "next build",
     "start": "vinext start",
-    "test": "npm run validate:data && node --experimental-strip-types --test tests/*.test.ts",
+    "test": "npm run validate:data && npm run check:functions && node --experimental-strip-types --test tests/*.test.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
