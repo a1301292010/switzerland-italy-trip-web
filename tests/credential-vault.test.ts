@@ -71,5 +71,6 @@ test("credential route rejects locked requests and streams an unlocked private o
   assert.equal(unlocked.status, 200);
   assert.equal(unlocked.headers.get("Content-Type"), "application/pdf");
   assert.equal(unlocked.headers.get("Cache-Control"), "private, no-store, max-age=0");
+  assert.match(unlocked.headers.get("Content-Disposition") || "", /^inline;/);
   assert.equal(await unlocked.text(), "private-pdf");
 });

@@ -17,6 +17,7 @@ import {
 } from "../data/documents";
 import {
   CredentialVaultLockedError,
+  downloadCredentialDocument,
   lockCredentialVault,
   resolveDocumentSource,
   unlockCredentialVault,
@@ -1541,6 +1542,7 @@ function CredentialViewer({
   const credential = documents[index];
   const [source, setSource] = useState<ResolvedDocument | null>(null);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -1578,6 +1580,8 @@ function CredentialViewer({
     };
   }, [close]);
 
+  const canDownload = source?.kind === "inline" || source?.kind === "blob";
+
   return (
     <div className="credential-viewer" role="dialog" aria-modal="true" aria-label="凭证预览">
       <header>
@@ -1586,7 +1590,30 @@ function CredentialViewer({
           <strong>{credential.titleZh}</strong>
           <span>{credential.titleEn}</span>
         </div>
-        <button type="button" onClick={close} aria-label="关闭凭证预览">×</button>
+        <div className="credential-viewer-actions">
+          {canDownload && (
+            <button
+              type="button"
+              className="credential-download"
+              disabled={downloading}
+              onClick={async () => {
+                setDownloading(true);
+                setError("");
+                try {
+                  await downloadCredentialDocument(credential);
+                } catch (reason) {
+                  if (reason instanceof CredentialVaultLockedError) onLocked();
+                  else setError(reason instanceof Error ? reason.message : "下载失败");
+                } finally {
+                  setDownloading(false);
+                }
+              }}
+            >
+              {downloading ? "下载中…" : "下载"}
+            </button>
+          )}
+          <button type="button" onClick={close} aria-label="关闭凭证预览">×</button>
+        </div>
       </header>
       {documents.length > 1 && (
         <nav aria-label="同一订单的凭证">
@@ -1618,11 +1645,16 @@ function CredentialViewer({
             </dl>
           </section>
         )}
-        {source?.kind === "blob" &&
+        {(source?.kind === "inline" || source?.kind === "blob") &&
           (credential.type === "image" ? (
             <img className="credential-image" src={source.url} alt={credential.titleZh} />
           ) : (
-            <iframe className="credential-frame" src={source.url} title={credential.titleZh} />
+            <iframe
+              className="credential-frame"
+              src={source.url}
+              title={credential.titleZh}
+              // Same-origin credential API + session cookie; avoid blob: which Chrome downloads.
+            />
           ))}
       </main>
     </div>

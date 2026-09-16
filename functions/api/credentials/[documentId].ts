@@ -21,10 +21,12 @@ export const onRequestGet: PagesHandler<{ documentId: string }> = async ({
   const object = await env.CREDENTIALS_BUCKET.get(key);
   if (!object) return json({ error: "凭证文件尚未上传" }, 404);
   const type = object.httpMetadata?.contentType || "application/octet-stream";
+  const wantDownload = new URL(request.url).searchParams.get("download") === "1";
+  const safeName = `${params.documentId.replace(/[^a-zA-Z0-9._-]+/g, "-")}.${type.includes("png") ? "png" : type.includes("jpeg") || type.includes("jpg") ? "jpg" : "pdf"}`;
   return new Response(object.body, {
     headers: privateHeaders({
       "Content-Type": type,
-      "Content-Disposition": "inline",
+      "Content-Disposition": `${wantDownload ? "attachment" : "inline"}; filename="${safeName}"`,
       ...(object.size ? { "Content-Length": String(object.size) } : {}),
       ...(object.etag ? { "ETag": object.etag } : {}),
     }),
