@@ -1,8 +1,12 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import type { CredentialEnv } from "../functions/_credential-vault";
+import { onRequestGet as getCredential } from "../functions/api/credentials/[documentId]";
+import { onRequestPost as lockCredentialVault } from "../functions/api/credentials/lock";
+import { onRequestPost as unlockCredentialVault } from "../functions/api/credentials/unlock";
 
-interface Env {
+interface Env extends CredentialEnv {
   ASSETS: Fetcher;
   DB: D1Database;
   IMAGES: {
@@ -28,6 +32,21 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/credentials/unlock" && request.method === "POST") {
+      return unlockCredentialVault({ request, env, params: {} });
+    }
+    if (url.pathname === "/api/credentials/lock" && request.method === "POST") {
+      return lockCredentialVault({ request, env, params: {} });
+    }
+    const credentialMatch = url.pathname.match(/^\/api\/credentials\/([^/]+)$/);
+    if (credentialMatch && request.method === "GET") {
+      return getCredential({
+        request,
+        env,
+        params: { documentId: decodeURIComponent(credentialMatch[1]) },
+      });
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

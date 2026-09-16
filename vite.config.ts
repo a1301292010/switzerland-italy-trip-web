@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
@@ -8,13 +10,54 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 
+function loadDevVars() {
+  const file = resolve(process.cwd(), ".dev.vars");
+  if (!existsSync(file)) return {};
+  const vars: Record<string, string> = {};
+  for (const raw of readFileSync(file, "utf8").split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq <= 0) continue;
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith("'") && value.endsWith("'")) ||
+      (value.startsWith('"') && value.endsWith('"'))
+    ) {
+      value = value.slice(1, -1);
+    }
+    vars[line.slice(0, eq).trim()] = value;
+  }
+  return vars;
+}
+
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
+
+const r2Buckets = [
+  ...(r2
+    ? [
+        {
+          binding: r2,
+          bucket_name: "site-creator-r2",
+        },
+      ]
+    : []),
+  ...(r2 === "CREDENTIALS_BUCKET"
+    ? []
+    : [
+        {
+          binding: "CREDENTIALS_BUCKET",
+          bucket_name: "switzerland-italy-trip-credentials",
+        },
+      ]),
+];
 
 const localBindingConfig = {
   main: "./worker/index.ts",
   workers_dev: true,
   compatibility_flags: ["nodejs_compat"],
+  vars: loadDevVars(),
   assets: {
     directory: "./public",
     binding: "ASSETS",
@@ -29,14 +72,7 @@ const localBindingConfig = {
         },
       ]
     : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: "site-creator-r2",
-        },
-      ]
-    : [],
+  r2_buckets: r2Buckets,
 };
 
 export default defineConfig(async () => {

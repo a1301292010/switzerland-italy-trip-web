@@ -1,0 +1,5 @@
+# Copy to `.dev.vars` for local Pages / Wrangler development.
+# Do not put the vault password in React or other frontend files.
+CREDENTIAL_VAULT_PASSWORD=
+CREDENTIAL_SESSION_SECRET=
+CREDENTIAL_OBJECT_MAP={}

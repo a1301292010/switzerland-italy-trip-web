@@ -16,11 +16,19 @@ In the existing Pages project, add an R2 binding:
 
 Add these encrypted secrets to the Pages project:
 
-- `CREDENTIAL_VAULT_PASSWORD`: the vault password. Use a unique, long password.
+- `CREDENTIAL_VAULT_PASSWORD`: the vault password. Keep it in Cloudflare Secrets
+  (and local `.dev.vars`) only. Never hardcode it in React or other frontend files.
 - `CREDENTIAL_SESSION_SECRET`: a separate random secret used only to sign the
   8-hour session token. Generate at least 32 random bytes; do not reuse the
   vault password.
 - `CREDENTIAL_OBJECT_MAP`: JSON mapping public document IDs to private R2 keys.
+
+## Local development
+
+Copy `.dev.vars.example` to `.dev.vars` and fill in the same secret names.
+Wrangler / Cloudflare Pages Functions load `.dev.vars` locally; the unlock API
+still compares the submitted password on the server. Changing the password later
+only requires updating `.dev.vars` and the Cloudflare Secret.
 
 Example shape (use your own opaque R2 keys; do not commit the real value):
 
