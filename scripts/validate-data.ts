@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { dayMapPoints } from "../data/map-points.ts";
 import { TRIP_END, TRIP_START } from "../data/trip-startup.ts";
+import {
+  documents,
+  ticketPresentation,
+} from "../data/documents.ts";
 
 const content = JSON.parse(
   readFileSync(new URL("../data/trip-content.json", import.meta.url), "utf8"),
@@ -10,6 +14,26 @@ const trip = JSON.parse(
 );
 const errors: string[] = [];
 const fail = (message: string) => errors.push(message);
+
+const documentIds = new Set<string>();
+for (const document of documents) {
+  if (documentIds.has(document.id)) fail(`duplicate credential document id ${document.id}`);
+  documentIds.add(document.id);
+  if (!document.titleZh.trim() || !document.titleEn.trim())
+    fail(`credential document ${document.id} is missing bilingual titles`);
+  if (document.storage.kind === "signed" && !document.storage.endpoint.startsWith("/api/"))
+    fail(`credential document ${document.id} must use a same-origin signed endpoint`);
+  const serializedDocument = JSON.stringify(document);
+  if (/public\/|public\\|file:\/\/|[A-Z]:\\/i.test(serializedDocument))
+    fail(`credential document ${document.id} exposes a public or local file path`);
+}
+for (const [ticketName, presentation] of Object.entries(ticketPresentation)) {
+  if (!content.tickets.some((ticket: any) => ticket.name === ticketName))
+    fail(`credential presentation references unknown ticket ${ticketName}`);
+  for (const id of presentation.documentIds) {
+    if (!documentIds.has(id)) fail(`${ticketName} references unknown credential ${id}`);
+  }
+}
 
 const daysByIso = new Map(content.days.map((day: any) => [day.iso, day]));
 for (const [iso, points] of Object.entries(dayMapPoints)) {

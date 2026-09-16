@@ -9,6 +9,13 @@ import {
   type TripMapPoint,
 } from "../data/map-points";
 import { selectInitialDayIndex } from "../data/trip-startup";
+import {
+  documentById,
+  ticketPresentation,
+  type CredentialDocument,
+  type DocumentCategory,
+} from "../data/documents";
+import { resolveDocumentSource, type ResolvedDocument } from "../lib/document-provider";
 
 type Event = {
   time: string;
@@ -670,6 +677,13 @@ export default function Home() {
   const [ticketFilter, setTicketFilter] = useState<
     "all" | "buy" | "check" | "done"
   >("all");
+  const [ticketCategory, setTicketCategory] = useState<
+    "all" | DocumentCategory
+  >("all");
+  const [credentialViewer, setCredentialViewer] = useState<{
+    documents: CredentialDocument[];
+    index: number;
+  } | null>(null);
   const [prepOpen, setPrepOpen] = useState(false),
     [prepChecks, setPrepChecks] = useState<Record<string, boolean>>({});
   const [mapDayIso, setMapDayIso] = useState<string | null>(null),
@@ -731,8 +745,12 @@ export default function Home() {
     check: content.tickets.filter((t) => /待确认|待定|核/.test(t.status)),
     done: content.tickets.filter((t) => /已购|已付/.test(t.status)),
   };
-  const shownTickets =
+  const statusTickets =
     ticketFilter === "all" ? content.tickets : ticketGroups[ticketFilter];
+  const shownTickets = statusTickets.filter((ticket) => {
+    if (ticketCategory === "all") return true;
+    return ticketPresentation[ticket.name]?.category === ticketCategory;
+  });
   useEffect(() => {
     const timer = setInterval(() => setClock(new Date()), 60000);
     return () => clearInterval(timer);
@@ -1191,8 +1209,8 @@ export default function Home() {
         <section className="page-section wallet-page">
           <div className="page-title">
             <p>WALLET</p>
-            <h2>票务</h2>
-            <span>优先处理未完成事项</span>
+            <h2>票务与凭证</h2>
+            <span>门票、交通、住宿与保险凭证库</span>
           </div>
           <div className="ticket-filters">
             {(
@@ -1214,30 +1232,75 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <div className="ticket-list">
-            {shownTickets.map((t, i) => (
-              <article
-                className={`wallet-card tone-${ticketTone(t.name)}`}
-                key={`${t.name}-${i}`}
+          <div className="credential-categories" aria-label="凭证分类">
+            {(
+              [
+                ["all", "全部"],
+                ["admission", "门票"],
+                ["transport", "交通"],
+                ["accommodation", "酒店/住宿"],
+                ["insurance", "保险"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                className={ticketCategory === id ? "active" : ""}
+                onClick={() => setTicketCategory(id)}
               >
-                <div className="ticket-stub">
-                  <Icon name="ticket" size={20} />
-                  <b>{t.date}</b>
-                  <small>{t.time || "全天"}</small>
-                </div>
-                <div className="ticket-main">
-                  <small>TRAVEL PASS · {String(i + 1).padStart(2, "0")}</small>
-                  <strong>{t.name}</strong>
-                  <p>{t.price}</p>
-                  {t.url && (
-                    <a href={t.url} target="_blank" rel="noreferrer">
-                      查看官方页面 ↗
-                    </a>
-                  )}
-                  <Status value={t.status} />
-                </div>
-              </article>
+                {label}
+              </button>
             ))}
+          </div>
+          <div className="ticket-list">
+            {shownTickets.map((t, i) => {
+              const presentation = ticketPresentation[t.name];
+              const linkedDocuments = (presentation?.documentIds || [])
+                .map((id) => documentById.get(id))
+                .filter((document): document is CredentialDocument => !!document);
+              return (
+                <article
+                  className={`wallet-card tone-${ticketTone(t.name)}`}
+                  key={`${t.name}-${i}`}
+                >
+                  <div className="ticket-stub">
+                    <Icon name="ticket" size={20} />
+                    <b>{t.date}</b>
+                    <small>{t.time || "全天"}</small>
+                  </div>
+                  <div className="ticket-main">
+                    <small>
+                      {(presentation?.category || "travel").toUpperCase()} · {presentation?.city || "TRIP"}
+                    </small>
+                    <strong>{presentation?.titleZh || t.name}</strong>
+                    {presentation?.titleEn && (
+                      <span className="ticket-title-en">{presentation.titleEn}</span>
+                    )}
+                    <p>{t.price}</p>
+                    <div className="ticket-links">
+                      {linkedDocuments.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCredentialViewer({ documents: linkedDocuments, index: 0 })
+                          }
+                        >
+                          查看凭证{linkedDocuments.length > 1 ? ` · ${linkedDocuments.length}份` : ""}
+                        </button>
+                      )}
+                      {t.url && (
+                        <a href={t.url} target="_blank" rel="noreferrer">
+                          官方页面 ↗
+                        </a>
+                      )}
+                    </div>
+                    <Status value={t.status} />
+                  </div>
+                </article>
+              );
+            })}
+            {shownTickets.length === 0 && (
+              <p className="credential-empty">该分类暂无凭证。</p>
+            )}
           </div>
         </section>
       )}
@@ -1393,6 +1456,18 @@ export default function Home() {
           close={() => setPrompter(null)}
         />
       )}
+      {credentialViewer && (
+        <CredentialViewer
+          documents={credentialViewer.documents}
+          index={credentialViewer.index}
+          select={(index) =>
+            setCredentialViewer((current) =>
+              current ? { ...current, index } : current,
+            )
+          }
+          close={() => setCredentialViewer(null)}
+        />
+      )}
       <nav className="bottom-nav" aria-label="主导航">
         {nav.map(([id, label, icon]) => (
           <button
@@ -1408,6 +1483,95 @@ export default function Home() {
         ))}
       </nav>
     </main>
+  );
+}
+
+function CredentialViewer({
+  documents,
+  index,
+  select,
+  close,
+}: {
+  documents: CredentialDocument[];
+  index: number;
+  select: (index: number) => void;
+  close: () => void;
+}) {
+  const credential = documents[index];
+  const [source, setSource] = useState<ResolvedDocument | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setSource(null);
+    setError("");
+    resolveDocumentSource(credential)
+      .then((resolved) => active && setSource(resolved))
+      .catch((reason) => active && setError(String(reason)));
+    return () => {
+      active = false;
+    };
+  }, [credential]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && close();
+    const overflow = window.document.body.style.overflow;
+    window.addEventListener("keydown", onKey);
+    window.document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.document.body.style.overflow = overflow || "";
+    };
+  }, [close]);
+
+  return (
+    <div className="credential-viewer" role="dialog" aria-modal="true" aria-label="凭证预览">
+      <header>
+        <div>
+          <small>{credential.displayFileName}</small>
+          <strong>{credential.titleZh}</strong>
+          <span>{credential.titleEn}</span>
+        </div>
+        <button type="button" onClick={close} aria-label="关闭凭证预览">×</button>
+      </header>
+      {documents.length > 1 && (
+        <nav aria-label="同一订单的凭证">
+          {documents.map((item, itemIndex) => (
+            <button
+              type="button"
+              className={itemIndex === index ? "active" : ""}
+              key={item.id}
+              onClick={() => select(itemIndex)}
+            >
+              {itemIndex + 1} / {documents.length}
+            </button>
+          ))}
+        </nav>
+      )}
+      <main>
+        {error && <p className="credential-error">{error}</p>}
+        {!source && !error && <p className="credential-loading">正在准备安全预览…</p>}
+        {source?.kind === "mock" && (
+          <section className="credential-placeholder">
+            <Icon name="ticket" size={34} />
+            <h2>凭证尚未连接私有存储</h2>
+            <p>预览界面和票务关联已经就绪。真实文件不会放入公开网站；后续连接私有 Cloudflare R2 后，将通过短时有效的签名地址在这里加载。</p>
+            <dl>
+              <div><dt>日期</dt><dd>{credential.date} {credential.time || ""}</dd></div>
+              <div><dt>城市</dt><dd>{credential.city}</dd></div>
+              {credential.amount && <div><dt>金额</dt><dd>{credential.amount}</dd></div>}
+              <div><dt>文件</dt><dd>{credential.displayFileName}</dd></div>
+            </dl>
+          </section>
+        )}
+        {source?.kind === "signed" &&
+          (credential.type === "image" ? (
+            <img className="credential-image" src={source.url} alt={credential.titleZh} />
+          ) : (
+            <iframe className="credential-frame" src={source.url} title={credential.titleZh} />
+          ))}
+      </main>
+    </div>
   );
 }
 
